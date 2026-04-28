@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>ChatBot UI Mejorado</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #ece5dd;
+    margin: 0;
+}
+
+.chat-container {
+    max-width: 400px;
+    margin: 20px auto;
+    background: #fff;
+    height: 600px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.chat-header {
+    background: #075E54;
+    color: white;
+    padding: 15px;
+    font-weight: bold;
+}
+
+.chat-box {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+/* CONTENEDOR MENSAJE */
+.message-row {
+    display: flex;
+    margin: 8px 0;
+    align-items: flex-end;
+}
+
+.message-row.user {
+    justify-content: flex-end;
+}
+
+.message-row.bot {
+    justify-content: flex-start;
+}
+
+/* AVATAR */
+.avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    margin: 0 5px;
+}
+
+/* MENSAJE */
+.message {
+    max-width: 70%;
+    padding: 10px;
+    border-radius: 10px;
+    position: relative;
+    font-size: 14px;
+}
+
+.user .message {
+    background: #DCF8C6;
+}
+
+.bot .message {
+    background: #eee;
+}
+
+/* CHECK VISTO */
+.check {
+    font-size: 12px;
+    color: gray;
+    margin-top: 3px;
+    text-align: right;
+}
+
+.chat-input {
+    display: flex;
+    border-top: 1px solid #ccc;
+}
+
+.chat-input input {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    outline: none;
+}
+
+.chat-input button {
+    background: #25D366;
+    border: none;
+    color: white;
+    padding: 10px 15px;
+    cursor: pointer;
+}
+</style>
+
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="chat-header">🤖 ChatBot</div>
+    
+    <div class="chat-box" id="chatBox"></div>
+
+    <div class="chat-input">
+        <input type="text" id="userInput" placeholder="Escribe un mensaje...">
+        <button onclick="sendMessage()">Enviar</button>
+    </div>
+</div>
+
+<script>
+
+// IMÁGENES (puedes cambiar links si quieres)
+const userAvatar = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+const botAvatar = "https://cdn-icons-png.flaticon.com/512/4712/4712027.png";
+
+function addMessage(text, sender) {
+    const chatBox = document.getElementById("chatBox");
+
+    const row = document.createElement("div");
+    row.classList.add("message-row", sender);
+
+    const avatar = document.createElement("img");
+    avatar.classList.add("avatar");
+    avatar.src = sender === "user" ? userAvatar : botAvatar;
+
+    const messageContainer = document.createElement("div");
+
+    const message = document.createElement("div");
+    message.classList.add("message");
+    message.innerText = text;
+
+    const check = document.createElement("div");
+    check.classList.add("check");
+
+    if (sender === "user") {
+        check.innerText = "✔✔ Visto";
+    }
+
+    messageContainer.appendChild(message);
+    messageContainer.appendChild(check);
+
+    if (sender === "user") {
+        row.appendChild(messageContainer);
+        row.appendChild(avatar);
+    } else {
+        row.appendChild(avatar);
+        row.appendChild(messageContainer);
+    }
+
+    chatBox.appendChild(row);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function getBotResponse(input) {
+    input = input.toLowerCase();
+
+    // RESPUESTAS FIJAS
+    if (input.includes("pago")) {
+        return "Aceptamos tarjetas de crédito/débito (Visa, Mastercard, American Express), PayPal y transferencia bancaria.";
+    }
+
+    if (input.includes("envío") || input.includes("envio")) {
+        return "Ofrecemos envío estándar y express.";
+    }
+
+    if (input.includes("garantía") || input.includes("garantia")) {
+        return "Sí, ofrecemos garantía en la mayoría de nuestros productos.";
+    }
+
+    if (input.includes("atención") || input.includes("cliente")) {
+        return "Sí, contamos con atención al cliente.";
+    }
+
+    // 🔥 DETECCIÓN INTELIGENTE DE DISPONIBILIDAD
+    const palabrasClaveCompra = [
+        "tienen", "tendra", "tendran", "hay", "disponible",
+        "disponibilidad", "venden", "quiero", "busco", "necesito"
+    ];
+
+    const productos = [
+        "monitor", "laptop", "teclado", "mouse", "impresora", "pc"
+    ];
+
+    const detectaIntencion = palabrasClaveCompra.some(p => input.includes(p));
+    const detectaProducto = productos.some(p => input.includes(p));
+
+    if (detectaIntencion && detectaProducto) {
+        const respuestas = [
+            "Sí, tenemos ese producto disponible ✅",
+            "Nos queda poco stock de ese producto ⚠️",
+            "Actualmente está agotado ❌",
+            "Disponible bajo pedido 📦"
+        ];
+        return respuestas[Math.floor(Math.random() * respuestas.length)];
+    }
+
+    // fallback si solo dicen "stock"
+    if (input.includes("stock")) {
+        const respuestas = [
+            "Sí, tenemos disponibilidad ✅",
+            "Nos queda poco stock ⚠️",
+            "Actualmente está agotado ❌"
+        ];
+        return respuestas[Math.floor(Math.random() * respuestas.length)];
+    }
+
+    return "No entendí tu pregunta 🤔";
+}
+
+function sendMessage() {
+    const input = document.getElementById("userInput");
+    const text = input.value.trim();
+
+    if (text === "") return;
+
+    addMessage(text, "user");
+
+    setTimeout(() => {
+        const response = getBotResponse(text);
+        addMessage(response, "bot");
+    }, 500);
+
+    input.value = "";
+}
+
+</script>
+
+</body>
+</html>
