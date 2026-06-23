@@ -10,6 +10,7 @@ import com.chatbot.model.Respuesta;
 import com.chatbot.model.PersonalidadChatbot;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import com.chatbot.model.RespuestaChat;
 
 import java.util.List;
 import java.util.Random;
@@ -337,7 +338,9 @@ private String aplicarPersonalidad(String mensaje) {
     }
 }
 
-    public String procesarMensaje(String mensaje) {
+        public RespuestaChat procesarMensaje(String mensaje) {
+
+        RespuestaChat chat = new RespuestaChat();
 
         if (mensaje == null || mensaje.isBlank()) {
             return "Escribe un mensaje.";
@@ -636,7 +639,23 @@ private String aplicarPersonalidad(String mensaje) {
                     respuesta
             );
 
-            return aplicarPersonalidad(respuesta);
+            chat.setRespuesta(
+                        aplicarPersonalidad(respuesta)
+                );
+
+                chat.setNombreProducto(
+                        producto.getNombre()
+                );
+
+                chat.setImagen(
+                        producto.getImagen()
+                );
+
+                chat.setPrecio(
+                        producto.getPrecio().toString()
+                );
+
+                return chat;
         }
 
         /*

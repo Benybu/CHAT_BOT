@@ -7,6 +7,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 import java.io.BufferedReader;
 import java.io.IOException;
+import com.chatbot.model.RespuestaChat;
 
 @WebServlet("/api/chat")
 public class ChatApiServlet extends HttpServlet {
@@ -54,15 +55,24 @@ public class ChatApiServlet extends HttpServlet {
                     .trim();
         }
 
-        String respuesta = chatbotService.procesarMensaje(mensaje);
+        RespuestaChat chat =
+                chatbotService.procesarMensaje(mensaje);
 
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
 
         response.getWriter().write("""
-        {
-            "respuesta":"%s"
-        }
-        """.formatted(respuesta));
+            {
+                "respuesta":"%s",
+                "nombre":"%s",
+                "imagen":"%s",
+                "precio":"%s"
+            }
+            """.formatted(
+                    chat.getRespuesta(),
+                    chat.getNombreProducto(),
+                    chat.getImagen(),
+                    chat.getPrecio()
+            ));
     }
 }
