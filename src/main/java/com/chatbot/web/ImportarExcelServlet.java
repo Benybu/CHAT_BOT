@@ -1,12 +1,12 @@
 package com.chatbot.web;
 
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Part;
+import javax.servlet.http.*;
 
 import java.io.IOException;
 
@@ -25,12 +25,38 @@ public class ImportarExcelServlet extends HttpServlet {
 
         System.out.println(
                 "Archivo recibido: "
-                + archivo.getSubmittedFileName()
+                        + archivo.getSubmittedFileName()
         );
+
+        Workbook workbook =
+                new XSSFWorkbook(
+                        archivo.getInputStream()
+                );
+
+        Sheet hoja =
+                workbook.getSheetAt(0);
+
+        for (Row fila : hoja) {
+
+            Cell celda =
+                    fila.getCell(0);
+
+            if (celda != null) {
+
+                System.out.println(
+                        "Fila: "
+                                + fila.getRowNum()
+                                + " -> "
+                                + celda.toString()
+                );
+            }
+        }
+
+        workbook.close();
 
         response.sendRedirect(
                 request.getContextPath()
-                + "/DashboardServlet"
+                        + "/DashboardServlet"
         );
     }
 }
