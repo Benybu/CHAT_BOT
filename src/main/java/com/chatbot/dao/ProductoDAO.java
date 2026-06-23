@@ -7,6 +7,8 @@ import java.sql.*;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 
 public class ProductoDAO {
 
@@ -576,6 +578,22 @@ public class ProductoDAO {
         }
 
         return resultado;
+    }
+
+    public void eliminarTodos() {
+
+        String sql = "TRUNCATE TABLE productos";
+
+        try (
+                Connection con = Conexion.getConexion();
+                PreparedStatement ps = con.prepareStatement(sql)
+        ) {
+
+            ps.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public Producto buscarAlternativa(

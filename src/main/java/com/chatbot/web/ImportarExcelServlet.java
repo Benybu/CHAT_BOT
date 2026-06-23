@@ -40,6 +40,8 @@ public class ImportarExcelServlet extends HttpServlet {
 
         Sheet hoja = workbook.getSheetAt(0);
 
+        productoDAO.eliminarTodos();
+
         boolean primeraFila = true;
 
         for (Row fila : hoja) {
