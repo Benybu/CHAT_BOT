@@ -50,6 +50,11 @@ public class ImportarExcelServlet extends HttpServlet {
                 continue;
             }
 
+            if (fila.getCell(1) == null
+                        || getTexto(fila.getCell(1)).isEmpty()) {
+                    continue;
+            }
+            
             Producto p = new Producto();
 
             p.setSku(getTexto(fila.getCell(0)));
