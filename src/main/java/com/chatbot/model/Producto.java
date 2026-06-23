@@ -10,6 +10,7 @@ public class Producto {
     private int stock;
     private String descripcion;
     private boolean activo;
+    private String sku;
 
     // NUEVOS CAMPOS
     private String categoria;
@@ -22,6 +23,7 @@ public class Producto {
 
     public Producto(
             int id,
+            String sku,
             String nombre,
             BigDecimal precio,
             int stock,
@@ -33,6 +35,31 @@ public class Producto {
             String imagen
     ) {
         this.id = id;
+        this.sku = sku;
+        this.nombre = nombre;
+        this.precio = precio;
+        this.stock = stock;
+        this.descripcion = descripcion;
+        this.activo = activo;
+        this.categoria = categoria;
+        this.marca = marca;
+        this.tags = tags;
+        this.imagen = imagen;
+    }
+
+    public Producto(
+            String sku,
+            String nombre,
+            BigDecimal precio,
+            int stock,
+            String descripcion,
+            boolean activo,
+            String categoria,
+            String marca,
+            String tags,
+            String imagen
+    ) {
+        this.sku = sku;
         this.nombre = nombre;
         this.precio = precio;
         this.stock = stock;
@@ -122,5 +149,12 @@ public class Producto {
 
     public void setImagen(String imagen) {
         this.imagen = imagen;
+    }
+    public String getSku() {
+        return sku;
+    }
+
+    public void setSku(String sku) {
+        this.sku = sku;
     }
 }

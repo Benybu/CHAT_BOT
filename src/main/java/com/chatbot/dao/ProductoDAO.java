@@ -14,6 +14,7 @@ public class ProductoDAO {
 
         return new Producto(
                 rs.getInt("id"),
+                rs.getString("sku"),
                 rs.getString("nombre"),
                 rs.getBigDecimal("precio"),
                 rs.getInt("stock"),
@@ -83,6 +84,7 @@ public class ProductoDAO {
         String sql = """
                 SELECT
                 id,
+                sku,
                 nombre,
                 precio,
                 stock,
@@ -138,6 +140,7 @@ public class ProductoDAO {
         String sql = """
                 SELECT
                 id,
+                sku,
                 nombre,
                 precio,
                 stock,
@@ -176,6 +179,7 @@ public class ProductoDAO {
 
         String sql = """
                 INSERT INTO productos(
+                sku,
                 nombre,
                 precio,
                 stock,
@@ -186,7 +190,7 @@ public class ProductoDAO {
                 tags,
                 imagen
                 )
-                VALUES(?,?,?,?,?,?,?,?,?)
+                VALUES(?,?,?,?,?,?,?,?,?,?)
                 """;
 
         try (
@@ -194,28 +198,30 @@ public class ProductoDAO {
                 PreparedStatement ps = con.prepareStatement(sql)
         ) {
 
-            ps.setString(1, p.getNombre());
+            ps.setString(1, p.getSku());
+
+            ps.setString(2, p.getNombre());
 
             ps.setBigDecimal(
-                    2,
+                    3,
                     p.getPrecio() == null
                             ? BigDecimal.ZERO
                             : p.getPrecio()
             );
 
-            ps.setInt(3, p.getStock());
+            ps.setInt(4, p.getStock());
 
-            ps.setString(4, p.getDescripcion());
+            ps.setString(5, p.getDescripcion());
 
-            ps.setBoolean(5, p.isActivo());
+            ps.setBoolean(6, p.isActivo());
 
-            ps.setString(6, p.getCategoria());
+            ps.setString(7, p.getCategoria());
 
-            ps.setString(7, p.getMarca());
+            ps.setString(8, p.getMarca());
 
-            ps.setString(8, p.getTags());
+            ps.setString(9, p.getTags());
 
-            ps.setString(9, p.getImagen());
+            ps.setString(10, p.getImagen());
 
             ps.executeUpdate();
 
@@ -228,6 +234,7 @@ public class ProductoDAO {
 
         String sql = """
                 UPDATE productos SET
+                sku=?,
                 nombre=?,
                 precio=?,
                 stock=?,
@@ -245,30 +252,32 @@ public class ProductoDAO {
                 PreparedStatement ps = con.prepareStatement(sql)
         ) {
 
-            ps.setString(1, p.getNombre());
+            ps.setString(1, p.getSku());
+
+            ps.setString(2, p.getNombre());
 
             ps.setBigDecimal(
-                    2,
+                    3,
                     p.getPrecio() == null
                             ? BigDecimal.ZERO
                             : p.getPrecio()
             );
 
-            ps.setInt(3, p.getStock());
+            ps.setInt(4, p.getStock());
 
-            ps.setString(4, p.getDescripcion());
+            ps.setString(5, p.getDescripcion());
 
-            ps.setBoolean(5, p.isActivo());
+            ps.setBoolean(6, p.isActivo());
 
-            ps.setString(6, p.getCategoria());
+            ps.setString(7, p.getCategoria());
 
-            ps.setString(7, p.getMarca());
+            ps.setString(8, p.getMarca());
 
-            ps.setString(8, p.getTags());
+            ps.setString(9, p.getTags());
 
-            ps.setString(9, p.getImagen());
+            ps.setString(10, p.getImagen());
 
-            ps.setInt(10, p.getId());
+            ps.setInt(11, p.getId());
 
             ps.executeUpdate();
 
@@ -616,5 +625,59 @@ public class ProductoDAO {
 
         return mejor;
     }
+    public Producto buscarPorSku(
+            String sku
+    ) {
 
+        String sql = """
+            SELECT
+            id,
+            sku,
+            nombre,
+            precio,
+            stock,
+            descripcion,
+            estado,
+            categoria,
+            marca,
+            tags,
+            imagen
+            FROM productos
+            WHERE sku = ?
+            """;
+
+        try (
+                Connection con =
+                        Conexion.getConexion();
+
+                PreparedStatement ps =
+                        con.prepareStatement(sql)
+        ) {
+
+            ps.setString(
+                    1,
+                    sku
+            );
+
+            try (
+                    ResultSet rs =
+                            ps.executeQuery()
+            ) {
+
+                if (rs.next()) {
+
+                    return map(rs);
+                }
+            }
+
+        } catch (SQLException e) {
+
+            throw new RuntimeException(
+                    "Error buscando SKU",
+                    e
+            );
+        }
+
+        return null;
+    }
 }

@@ -213,6 +213,23 @@
             placeholder="URL de imagen">
             <button type="submit">Guardar producto</button>
         </form>
+        <h2>Importar catálogo</h2>
+        <form
+        action="admin/importar-excel"
+        method="post"
+        enctype="multipart/form-data">
+
+            <input
+                type="file"
+                name="archivo"
+                accept=".xlsx"
+                required>
+
+            <button type="submit">
+                Importar Excel
+            </button>
+
+</form>
     </div>
 
     <div class="panel">

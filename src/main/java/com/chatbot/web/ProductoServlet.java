@@ -58,6 +58,10 @@ public class ProductoServlet extends HttpServlet {
         */
         Producto p = new Producto();
 
+        p.setSku(
+                request.getParameter("sku")
+        );
+
         p.setNombre(nombre);
 
         p.setPrecio(
