@@ -286,6 +286,17 @@ public class ProductoDAO {
         }
     }
 
+    public void guardarOActualizar(Producto p) {
+        Producto existente = buscarPorSku(p.getSku());
+
+        if (existente != null) {
+            p.setId(existente.getId());
+            actualizar(p);
+        } else {
+            guardar(p);
+        }
+    }
+
     public void eliminar(int id) {
 
         String sql = "UPDATE productos SET estado = 0 WHERE id = ?";
