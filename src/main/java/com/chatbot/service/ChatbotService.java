@@ -338,9 +338,7 @@ private String aplicarPersonalidad(String mensaje) {
     }
 }
 
-        public RespuestaChat procesarMensaje(String mensaje) {
-
-        RespuestaChat chat = new RespuestaChat();
+        public String procesarMensaje(String mensaje) {
 
         if (mensaje == null || mensaje.isBlank()) {
             return "Escribe un mensaje.";
@@ -639,23 +637,7 @@ private String aplicarPersonalidad(String mensaje) {
                     respuesta
             );
 
-            chat.setRespuesta(
-                        aplicarPersonalidad(respuesta)
-                );
-
-                chat.setNombreProducto(
-                        producto.getNombre()
-                );
-
-                chat.setImagen(
-                        producto.getImagen()
-                );
-
-                chat.setPrecio(
-                        producto.getPrecio().toString()
-                );
-
-                return chat;
+            return aplicarPersonalidad(respuesta);
         }
 
         /*

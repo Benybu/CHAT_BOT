@@ -55,24 +55,17 @@ public class ChatApiServlet extends HttpServlet {
                     .trim();
         }
 
-        RespuestaChat chat =
-                chatbotService.procesarMensaje(mensaje);
+        String respuesta =
+        chatbotService.procesarMensaje(mensaje);
 
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
 
         response.getWriter().write("""
             {
-                "respuesta":"%s",
-                "nombre":"%s",
-                "imagen":"%s",
-                "precio":"%s"
+                "respuesta":"%s"
             }
-            """.formatted(
-                    chat.getRespuesta(),
-                    chat.getNombreProducto(),
-                    chat.getImagen(),
-                    chat.getPrecio()
-            ));
+            """.formatted(respuesta));
+
     }
 }
