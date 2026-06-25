@@ -452,16 +452,16 @@ private String aplicarPersonalidad(String mensaje) {
         }
         }
 
-        if (buscaProductoInexistente(texto, producto)) {
-
-        String respuesta = """
-        😅 Actualmente no contamos con ese producto exacto.
-        Pero sí tenemos otras opciones gamer disponibles 🎮
-
-        ¿Te gustaría que te recomiende algo similar? 👌
-        """;
-
-        return aplicarPersonalidad(respuesta);
+        if ( 
+                buscaProductoInexistente(texto, producto) 
+                && producto == null 
+        ) { 
+                String respuesta = """ 
+                😅 Actualmente no contamos con ese producto exacto. 
+                Pero sí tenemos otras opciones gamer disponibles 🎮 
+                ¿Te gustaría que te recomiende algo similar? 👌 
+                """; 
+                return aplicarPersonalidad(respuesta); 
         }
 
         /*
