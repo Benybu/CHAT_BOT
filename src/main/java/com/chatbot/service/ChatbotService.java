@@ -948,4 +948,24 @@ private String aplicarPersonalidad(String mensaje) {
                 texto.contains("rack");
         }
 
+        public RespuestaChat procesarMensajeApi(String mensaje) { 
+                RespuestaChat chat = new RespuestaChat(); 
+                String respuesta = 
+                        procesarMensaje(mensaje); 
+                chat.setRespuesta(respuesta); 
+                Producto producto = 
+                        productoDAO.buscarCoincidencia(mensaje); 
+                if (producto != null) { 
+                        chat.setNombreProducto( 
+                                producto.getNombre() 
+                                ); 
+                chat.setImagen( 
+                        producto.getImagen() 
+                ); 
+                chat.setPrecio( 
+                        producto.getPrecio().toString() 
+                ); 
+                } 
+                return chat; 
+        }
 }
