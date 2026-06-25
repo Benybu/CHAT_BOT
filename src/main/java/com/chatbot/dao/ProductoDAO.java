@@ -317,168 +317,110 @@ public class ProductoDAO {
         }
     }
 
-    public Producto buscarCoincidencia(String mensaje) {
+    public Producto buscarCoincidencia(String mensaje) { 
+        String texto = normalizar(mensaje); 
+        if (contieneCategoriaInexistente(texto)) { 
+            return null; 
+        } 
+        
+        Producto mejorProducto = null; 
+        int mejorScore = -1; 
+        boolean quiereBarato = 
+            texto.contains("barato") || 
+            texto.contains("economico") || 
+            texto.contains("económico"); 
+            
+        boolean quierePremium = 
+            texto.contains("premium") || 
+            texto.contains("pro") || 
+            texto.contains("alta gama"); 
 
-        String texto = normalizar(mensaje);
+        String[] palabrasUsuario = 
+            texto.split("\\s+"); 
 
-        if (contieneCategoriaInexistente(texto)) {
-            return null;
-        }
-
-        Producto mejorProducto = null;
-
-        int mejorScore = -1;
-
-        boolean quiereBarato =
-                texto.contains("barato") ||
-                texto.contains("economico") ||
-                texto.contains("económico");
-
-        boolean quierePremium =
-                texto.contains("premium") ||
-                texto.contains("pro") ||
-                texto.contains("alta gama");
-
-        for (Producto p : listarActivos()) {
-
-            int score = 0;
-
-            String nombre =
-                    normalizar(p.getNombre());
-
-            String categoria =
-                    normalizar(p.getCategoria());
-
-            String marca =
-                    normalizar(p.getMarca());
-
-            String tags =
-                    normalizar(p.getTags());
-
-            String contenido =
-                    nombre + " " +
-                    categoria + " " +
-                    marca + " " +
-                    tags;
-
-            String[] palabrasUsuario =
-                    texto.split("\\s+");
-
-            for (String palabra : palabrasUsuario) {
-
-                /*
-                IGNORAR PALABRAS MUY CORTAS
-                */
-                if (palabra.length() <= 2) {
-                    continue;
+        for (Producto p : listarActivos()) { 
+            int score = 0; 
+            int coincidencias = 0; 
+            String nombre = 
+                normalizar(p.getNombre()); 
+            String categoria = 
+                normalizar(p.getCategoria()); 
+            String marca = 
+                normalizar(p.getMarca()); 
+            String tags = 
+                normalizar(p.getTags()); 
+            String descripcion = 
+                normalizar(p.getDescripcion()); 
+            String contenido = 
+                nombre + " " + 
+                categoria + " " + 
+                marca + " " + 
+                tags + " " + 
+                descripcion; 
+            for (String palabra : palabrasUsuario) { 
+                if (palabra.length() <= 2) { 
+                    continue; 
+                } 
+            
+            boolean encontro = false; 
+            /* NOMBRE */ 
+            if (nombre.contains(palabra)) { 
+                score += 40; 
+                encontro = true; 
                 }
-
-                /*
-                NOMBRE EXACTO
-                */
-                if (nombre.contains(palabra)) {
-                    score += 100;
-                }
-
-                /*
-                CATEGORIA
-                */
-                else if (categoria.contains(palabra)) {
-                    score += 80;
-                }
-
-                /*
-                TAGS
-                */
-                else if (tags.contains(palabra)) {
-                    score += 50;
-                }
-
-                /*
-                MARCA
-                */
-                else if (marca.contains(palabra)) {
-                    score += 30;
-                }
-
-                /*
-                BUSQUEDA FLEXIBLE
-                */
-                else {
-
-                    String[] palabrasProducto =
-                            contenido.split("\\s+");
-
-                    for (String palabraProducto : palabrasProducto) {
-
-                        int distancia =
-                                distanciaLevenshtein(
-                                        palabra,
-                                        palabraProducto
-                                );
-
-                        /*
-                        PERMITE ERRORES PEQUEÑOS
-                        */
-                        if (distancia <= 2) {
-
-                            score += 25;
-                        }
-                    }
-                }
-            }
-
-            /*
-            PRODUCTOS BARATOS
-            */
-            if (quiereBarato) {
-
-                if (p.getPrecio().doubleValue() <= 100) {
-                    score += 50;
-                }
-                else if (p.getPrecio().doubleValue() <= 200) {
-                    score += 25;
-                }
-            }
-
-            /*
-            PRODUCTOS PREMIUM
-            */
-            if (quierePremium) {
-
-                if (p.getPrecio().doubleValue() >= 500) {
-                    score += 40;
-                }
-            }
-
-            /*
-            MÁS STOCK
-            */
-            score += p.getStock() / 10;
-
-            /*
-            MEJOR SCORE
-            */
-            if (score > mejorScore) {
-
-                mejorScore = score;
-
-                mejorProducto = p;
-            }
-        }
-
-        if (mejorScore < 60) {
-            return null;
-        }
-
-        /*
-        MINIMO DE COINCIDENCIA
-        */
-        if (mejorScore < 40) {
-            return null;
-        }
-
-        return mejorProducto;
+            /* CATEGORIA */ 
+            if (categoria.contains(palabra)) { 
+                score += 30; 
+                encontro = true; 
+                } 
+            /* TAGS */ 
+            if (tags.contains(palabra)) { 
+                score += 20; 
+                encontro = true; 
+                } 
+            /* MARCA */ 
+            if (marca.contains(palabra)) { 
+                score += 15; 
+                encontro = true; 
+                } 
+            /* DESCRIPCION */ 
+            if (descripcion.contains(palabra)) { 
+                score += 10; 
+                encontro = true; 
+                } 
+            /* SUMAR COINCIDENCIA REAL */ 
+            if (encontro) { 
+                coincidencias++; 
+            } } 
+            /* BONUS POR MUCHAS COINCIDENCIAS */ 
+            score += coincidencias * 50; 
+            /* PRODUCTOS BARATOS */ 
+            if (quiereBarato) { 
+                if (p.getPrecio().doubleValue() <= 100) { 
+                    score += 50; 
+                    } 
+            } 
+            /* PRODUCTOS PREMIUM */ 
+            if (quierePremium) { 
+                if (p.getPrecio().doubleValue() >= 500) { 
+                    score += 40; 
+                    } 
+            } 
+            /* MÁS STOCK */ 
+            score += p.getStock() / 10; 
+            /* GUARDAR MEJOR PRODUCTO */ 
+            if (score > mejorScore) { 
+                mejorScore = score; 
+                mejorProducto = p; 
+                } 
+            } 
+            /* MINIMO DE COINCIDENCIAS */ 
+            if (mejorScore < 80) { 
+                return null; 
+            } 
+            
+            return mejorProducto; 
+            
     }
 
     private String normalizar(String texto) {
