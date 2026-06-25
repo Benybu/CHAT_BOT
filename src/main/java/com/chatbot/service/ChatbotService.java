@@ -882,39 +882,36 @@ private String aplicarPersonalidad(String mensaje) {
         return coincidencias >= 2;
         }
 
-        private boolean buscaProductoInexistente(
-                String texto,
-                Producto producto
-        ) {
-
-        if (producto == null) {
-                return true;
-        }
-
-        String contenido =
-                (
-                        producto.getNombre() + " " +
-                        producto.getCategoria() + " " +
-                        producto.getTags()
-                ).toLowerCase();
-
-        String[] palabras = texto.split("\\s+");
-
-        int coincidencias = 0;
-
-        for (String palabra : palabras) {
-
-                palabra = palabra.trim();
-
-                if (
-                        palabra.length() > 3 &&
-                        contenido.contains(palabra)
-                ) {
-                coincidencias++;
-                }
-        }
-
-        return coincidencias == 0;
+        private boolean buscaProductoInexistente( 
+                String texto, 
+                Producto producto 
+        ) { 
+                if (producto == null) { 
+                        return true; 
+                } 
+                texto = texto.toLowerCase(); 
+                String contenido = 
+                        ( 
+                                producto.getNombre() + " " + 
+                                producto.getCategoria() + " " + 
+                                producto.getTags() + " " + 
+                                producto.getDescripcion() 
+                        ).toLowerCase(); 
+                int coincidencias = 0; 
+                String[] palabras = texto.split("\\s+"); 
+                for (String palabra : palabras) { 
+                        palabra = palabra.trim(); 
+                        /* IGNORAR PALABRAS PEQUEÑAS */ 
+                        if (palabra.length() <= 2) { 
+                                continue; 
+                        } 
+                        /* CONTAR COINCIDENCIAS */ 
+                        if (contenido.contains(palabra)) { 
+                                coincidencias++; 
+                        } 
+                } 
+                /* SI TIENE AL MENOS 2 COINCIDENCIAS, EL PRODUCTO YA ES VALIDO */ 
+                return coincidencias < 2; 
         }
 
         private boolean mensajeBuscaProducto(String texto) {

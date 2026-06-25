@@ -82,8 +82,9 @@ public class ImportarExcelServlet extends HttpServlet {
                     getTexto(fila.getCell(7))
             );
 
-            p.setImagen(
-                    getTexto(fila.getCell(8))
+            p.setImagen( 
+                getTexto(fila.getCell(8)) 
+                    .replace(" ", "") 
             );
 
             p.setActivo(true);
