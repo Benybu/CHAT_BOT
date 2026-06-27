@@ -339,6 +339,16 @@ public class ProductoDAO {
             texto.split("\\s+"); 
 
         for (Producto p : listarActivos()) { 
+             String medidaSolicitada = null;
+
+            java.util.regex.Matcher matcher =
+                    java.util.regex.Pattern
+                    .compile("(\\d{2})")
+                    .matcher(texto);
+
+            if (matcher.find()) {
+                medidaSolicitada = matcher.group(1);
+            }
             int score = 0; 
             int coincidencias = 0; 
             String nombre = 
@@ -356,7 +366,13 @@ public class ProductoDAO {
                 categoria + " " + 
                 marca + " " + 
                 tags + " " + 
-                descripcion; 
+                descripcion;
+                if (medidaSolicitada != null) {
+
+                    if (!contenido.contains(medidaSolicitada)) {
+                        continue;
+                    }
+                } 
             for (String palabra : palabrasUsuario) { 
                 palabra = palabra.trim(); 
                 /* IGNORAR PALABRAS MUY CORTAS */ 
