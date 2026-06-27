@@ -953,16 +953,44 @@ private String aplicarPersonalidad(String mensaje) {
                 Producto producto = 
                         productoDAO.buscarCoincidencia(mensaje); 
                 if (producto != null) { 
-                        chat.setNombreProducto( 
-                                producto.getNombre() 
-                                ); 
-                chat.setImagen( 
-                        producto.getImagen() 
-                ); 
-                chat.setPrecio( 
-                        producto.getPrecio().toString() 
-                ); 
-                } 
-                return chat; 
+                        respuesta =
+                        """
+                        🎮 Excelente opción 🚀
+
+                        Tenemos disponible este producto 👇
+
+                        🛒 %s
+
+                        💰 Precio: S/ %s
+
+                        📦 Stock: %d unidades
+
+                        📄 Descripción:
+                        %s
+
+                        🔥 Aprovecha antes que se agote.
+                        """
+                        .formatted(
+                                producto.getNombre(),
+                                producto.getPrecio(),
+                                producto.getStock(),
+                                producto.getDescripcion()
+                        );
+
+                chat.setRespuesta(respuesta);
+
+                chat.setNombreProducto(
+                        producto.getNombre()
+                );
+
+                chat.setImagen(
+                        producto.getImagen()
+                );
+
+                chat.setPrecio(
+                        producto.getPrecio().toString()
+                );
+                }
+                return chat;
         }
 }
