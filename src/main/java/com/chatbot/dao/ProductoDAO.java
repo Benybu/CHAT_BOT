@@ -358,10 +358,15 @@ public class ProductoDAO {
                 tags + " " + 
                 descripcion; 
             for (String palabra : palabrasUsuario) { 
+                palabra = palabra.trim(); 
+                /* IGNORAR PALABRAS MUY CORTAS */ 
                 if (palabra.length() <= 2) { 
                     continue; 
                 } 
-            
+                /* IGNORAR NUMEROS SOLOS */ 
+                if (palabra.matches("\\d+")) { 
+                    continue;
+                }
             boolean encontro = false; 
             /* NOMBRE */ 
             if (nombre.contains(palabra)) { 
