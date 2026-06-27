@@ -461,7 +461,7 @@ private String aplicarPersonalidad(String mensaje) {
                 Pero sí tenemos otras opciones gamer disponibles 🎮 
                 ¿Te gustaría que te recomiende algo similar? 👌 
                 """; 
-                return aplicarPersonalidad(respuesta); 
+                return aplicarPersonalidad(respuesta);
         }
 
         /*

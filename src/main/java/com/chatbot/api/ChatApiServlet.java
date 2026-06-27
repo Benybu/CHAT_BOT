@@ -55,7 +55,7 @@ public class ChatApiServlet extends HttpServlet {
                     .trim();
         }
 
-        RespuestaChat chat = 
+        RespuestaChat chat =
             chatbotService.procesarMensajeApi(mensaje);
 
         response.setContentType("application/json");

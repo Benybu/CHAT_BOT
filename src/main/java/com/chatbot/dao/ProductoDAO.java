@@ -375,7 +375,7 @@ public class ProductoDAO {
                 }
             /* CATEGORIA */ 
             if (categoria.contains(palabra)) { 
-                score += 30; 
+                score += 500; 
                 encontro = true; 
                 } 
             /* TAGS */ 
