@@ -338,7 +338,48 @@ public class ProductoDAO {
         String[] palabrasUsuario = 
             texto.split("\\s+"); 
 
-        for (Producto p : listarActivos()) { 
+        for (Producto p : listarActivos()) {
+            boolean contextoMonitor =
+                texto.contains("monitor");
+
+            boolean contextoMouse =
+                    texto.contains("mouse");
+
+            boolean contextoTeclado =
+                    texto.contains("teclado");
+
+            String nombreCompleto =
+                    (
+                    p.getNombre() + " " +
+                    p.getCategoria() + " " +
+                    p.getDescripcion() + " " +
+                    p.getTags()
+                ).toLowerCase();
+
+            if (
+                    contextoMonitor
+                    &&
+                    !nombreCompleto.contains("monitor")
+            ) {
+                continue;
+            }
+
+            if (
+                    contextoMouse
+                    &&
+                    !nombreCompleto.contains("mouse")
+            ) {
+                continue;
+            }
+
+            if (
+                    contextoTeclado
+                    &&
+                    !nombreCompleto.contains("teclado")
+            ) {
+                continue;
+            }
+
              String medidaSolicitada = null;
 
             java.util.regex.Matcher matcher =
