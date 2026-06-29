@@ -338,20 +338,12 @@ public class ProductoDAO {
                 texto.contains("pro") ||
                 texto.contains("alta gama");
 
-        boolean contextoMonitor =
-                texto.contains("monitor");
-
-        boolean contextoMouse =
-                texto.contains("mouse");
-
-        boolean contextoTeclado =
-                texto.contains("teclado");
-
         String[] palabrasUsuario =
                 texto.split("\\s+");
 
         /*
-        DETECTAR MARCA
+        DETECTAR MARCA AUTOMATICAMENTE
+        DESDE EL EXCEL
         */
         String marcaBuscada = null;
 
@@ -376,6 +368,32 @@ public class ProductoDAO {
         }
 
         /*
+        DETECTAR CATEGORIA AUTOMATICAMENTE
+        DESDE EL EXCEL
+        */
+        String categoriaBuscada = null;
+
+        for (Producto prod : listarActivos()) {
+
+            if (prod.getCategoria() == null) {
+                continue;
+            }
+
+            String categoriaExcel =
+                    normalizar(prod.getCategoria());
+
+            if (
+                    !categoriaExcel.isBlank()
+                    &&
+                    texto.contains(categoriaExcel)
+            ) {
+
+                categoriaBuscada = categoriaExcel;
+                break;
+            }
+        }
+
+        /*
         DETECTAR MEDIDA
         */
         String medidaSolicitada = null;
@@ -392,7 +410,7 @@ public class ProductoDAO {
         for (Producto p : listarActivos()) {
 
             /*
-            FILTRAR MARCA
+            FILTRAR POR MARCA
             */
             if (
                     marcaBuscada != null
@@ -402,6 +420,22 @@ public class ProductoDAO {
                         ||
                         !normalizar(p.getMarca())
                             .contains(marcaBuscada)
+                    )
+            ) {
+                continue;
+            }
+
+            /*
+            FILTRAR POR CATEGORIA
+            */
+            if (
+                    categoriaBuscada != null
+                    &&
+                    (
+                        p.getCategoria() == null
+                        ||
+                        !normalizar(p.getCategoria())
+                            .contains(categoriaBuscada)
                     )
             ) {
                 continue;
@@ -433,33 +467,6 @@ public class ProductoDAO {
                     descripcion;
 
             /*
-            FILTRAR CATEGORIA
-            */
-            if (
-                    contextoMonitor
-                    &&
-                    !contenido.contains("monitor")
-            ) {
-                continue;
-            }
-
-            if (
-                    contextoMouse
-                    &&
-                    !contenido.contains("mouse")
-            ) {
-                continue;
-            }
-
-            if (
-                    contextoTeclado
-                    &&
-                    !contenido.contains("teclado")
-            ) {
-                continue;
-            }
-
-            /*
             FILTRAR MEDIDA
             */
             if (medidaSolicitada != null) {
@@ -473,48 +480,78 @@ public class ProductoDAO {
 
                 palabra = palabra.trim();
 
+                /*
+                IGNORAR PALABRAS MUY CORTAS
+                */
                 if (palabra.length() <= 2) {
                     continue;
                 }
 
+                /*
+                IGNORAR NUMEROS SOLOS
+                */
                 if (palabra.matches("\\d+")) {
                     continue;
                 }
 
                 boolean encontro = false;
 
+                /*
+                NOMBRE
+                */
                 if (nombre.contains(palabra)) {
                     score += 40;
                     encontro = true;
                 }
 
+                /*
+                CATEGORIA
+                */
                 if (categoria.contains(palabra)) {
                     score += 500;
                     encontro = true;
                 }
 
+                /*
+                TAGS
+                */
                 if (tags.contains(palabra)) {
                     score += 20;
                     encontro = true;
                 }
 
+                /*
+                MARCA
+                */
                 if (marca.contains(palabra)) {
-                    score += 15;
+                    score += 30;
                     encontro = true;
                 }
 
+                /*
+                DESCRIPCION
+                */
                 if (descripcion.contains(palabra)) {
                     score += 10;
                     encontro = true;
                 }
 
+                /*
+                COINCIDENCIA
+                */
                 if (encontro) {
                     coincidencias++;
                 }
             }
 
+            /*
+            BONUS
+            */
             score += coincidencias * 50;
 
+            /*
+            BARATO
+            */
             if (quiereBarato) {
 
                 if (p.getPrecio().doubleValue() <= 100) {
@@ -522,6 +559,9 @@ public class ProductoDAO {
                 }
             }
 
+            /*
+            PREMIUM
+            */
             if (quierePremium) {
 
                 if (p.getPrecio().doubleValue() >= 500) {
@@ -529,8 +569,14 @@ public class ProductoDAO {
                 }
             }
 
+            /*
+            STOCK
+            */
             score += p.getStock() / 10;
 
+            /*
+            MEJOR PRODUCTO
+            */
             if (score > mejorScore) {
 
                 mejorScore = score;
@@ -538,12 +584,14 @@ public class ProductoDAO {
             }
         }
 
+        /*
+        MINIMO SCORE
+        */
         if (mejorScore < 80) {
             return null;
         }
 
         return mejorProducto;
-
     }
 
     private String normalizar(String texto) {
