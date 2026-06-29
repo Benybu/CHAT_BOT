@@ -20,6 +20,7 @@ public class ChatbotService {
         private String ultimaCategoria = "";
         private String ultimaMarca = "";
         private String ultimaMedida = "";
+        private String ultimoContexto = "";
         private final ProductoDAO productoDAO = new ProductoDAO();
         private final RespuestaDAO respuestaDAO = new RespuestaDAO();
         private final MensajeDAO mensajeDAO = new MensajeDAO();
@@ -1020,6 +1021,72 @@ private String aplicarPersonalidad(String mensaje) {
 
         public RespuestaChat procesarMensajeApi(String mensaje) { 
                 String texto = mensaje.toLowerCase();
+                /*
+                SI EL MENSAJE ES INCOMPLETO,
+                USAR CONTEXTO ANTERIOR
+                */
+                boolean usarContexto = false;
+
+                /*
+                PALABRAS GENERICAS
+                */
+                if (
+                        texto.contains("pulgada")
+                        ||
+                        texto.contains("monitor")
+                        ||
+                        texto.contains("mouse")
+                        ||
+                        texto.contains("teclado")
+                        ||
+                        texto.contains("audifono")
+                        ||
+                        texto.contains("laptop")
+                        ||
+                        texto.contains("pc")
+                ) {
+
+                usarContexto = true;
+                }
+
+                /*
+                DETECTAR MARCAS AUTOMATICAMENTE
+                DESDE EL EXCEL
+                */
+                for (Producto prod : listarActivos()) {
+
+                if (prod.getMarca() == null) {
+                        continue;
+                }
+
+                String marca =
+                        normalizar(prod.getMarca());
+
+                if (
+                        !marca.isBlank()
+                        &&
+                        texto.contains(marca)
+                ) {
+
+                        usarContexto = true;
+                        break;
+                }
+                }
+
+                /*
+                USAR EL CONTEXTO
+                */
+                if (
+                        usarContexto
+                        &&
+                        ultimoContexto != null
+                        &&
+                        !ultimoContexto.isBlank()
+                ) {
+
+                texto =
+                        ultimoContexto + " " + texto;
+                }
                 for (Producto p : productoDAO.listarActivos()) {
 
                         if (p.getMarca() == null) {
@@ -1100,6 +1167,7 @@ private String aplicarPersonalidad(String mensaje) {
                         producto.getPrecio().toString()
                 );
                 }
+                ultimoContexto = texto;
                 return chat;
         }
 }
