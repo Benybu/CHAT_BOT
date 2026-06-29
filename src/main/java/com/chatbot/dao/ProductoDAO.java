@@ -430,24 +430,6 @@ public class ProductoDAO {
                 continue;
             }
 
-            /*
-            FILTRAR POR CATEGORIA
-            */
-            if (categoriaBuscada != null) {
-
-                String textoProducto =
-                        (
-                            p.getNombre() + " " +
-                            p.getCategoria() + " " +
-                            p.getDescripcion() + " " +
-                            p.getTags()
-                        ).toLowerCase();
-
-                if (!textoProducto.contains(categoriaBuscada)) {
-                    continue;
-                }
-            }
-
             int score = 0;
             int coincidencias = 0;
 
@@ -472,7 +454,33 @@ public class ProductoDAO {
                     marca + " " +
                     tags + " " +
                     descripcion;
+            /*
+            FILTRAR POR CATEGORIA
+            */
+            boolean esMonitor =
+                    contenido.contains("monitor")
+                    || contenido.contains("pantalla")
+                    || contenido.contains("display");
 
+            boolean esMouse =
+                    contenido.contains("mouse");
+
+            boolean esTeclado =
+                    contenido.contains("teclado")
+                    || contenido.contains("keyboard");
+
+            if(categoriaBuscada!=null){
+
+                if(categoriaBuscada.equals("monitor") && !esMonitor)
+                    continue;
+
+                if(categoriaBuscada.equals("mouse") && !esMouse)
+                    continue;
+
+                if(categoriaBuscada.equals("teclado") && !esTeclado)
+                    continue;
+            }
+            
             /*
             FILTRAR MEDIDA
             */
@@ -594,8 +602,21 @@ public class ProductoDAO {
         /*
         MINIMO SCORE
         */
-        if (mejorScore < 80) {
+        if (mejorScore < 20) { //Cambiar aca el SCORE//
             return null;
+        }
+
+        System.out.println("Mejor score = " + mejorScore);
+
+        if(mejorProducto!=null){
+
+            System.out.println(mejorProducto.getNombre());
+
+        }
+        else{
+
+            System.out.println("NO ENCONTRO PRODUCTO");
+
         }
 
         return mejorProducto;
