@@ -17,13 +17,16 @@ import java.util.Random;
 
 public class ChatbotService {
 
-    private final ProductoDAO productoDAO = new ProductoDAO();
-    private final RespuestaDAO respuestaDAO = new RespuestaDAO();
-    private final MensajeDAO mensajeDAO = new MensajeDAO();
-    private final ConversacionDAO conversacionDAO = new ConversacionDAO();
-    private final OpenAIService openAIService = new OpenAIService();
-    private final Random random = new Random();
-    private final PersonalidadChatbot personalidad = PersonalidadChatbot.GAMER;
+        private String ultimaCategoria = "";
+        private String ultimaMarca = "";
+        private String ultimaMedida = "";
+        private final ProductoDAO productoDAO = new ProductoDAO();
+        private final RespuestaDAO respuestaDAO = new RespuestaDAO();
+        private final MensajeDAO mensajeDAO = new MensajeDAO();
+        private final ConversacionDAO conversacionDAO = new ConversacionDAO();
+        private final OpenAIService openAIService = new OpenAIService();
+        private final Random random = new Random();
+        private final PersonalidadChatbot personalidad = PersonalidadChatbot.GAMER;
 
         private Double extraerPresupuesto(String texto) {
 
@@ -345,6 +348,76 @@ private String aplicarPersonalidad(String mensaje) {
         }
 
         String texto = mensaje.toLowerCase();
+
+        /*
+        GUARDAR CATEGORIAS
+        */
+        if (texto.contains("monitor")) {
+        ultimaCategoria = "monitor";
+        }
+
+        if (texto.contains("mouse")) {
+        ultimaCategoria = "mouse";
+        }
+
+        if (texto.contains("teclado")) {
+        ultimaCategoria = "teclado";
+        }
+
+        if (texto.contains("laptop")) {
+        ultimaCategoria = "laptop";
+        }
+
+        /*
+        GUARDAR MARCAS
+        */
+        if (texto.contains("msi")) {
+        ultimaMarca = "msi";
+        }
+
+        if (texto.contains("asus")) {
+        ultimaMarca = "asus";
+        }
+
+        if (texto.contains("teros")) {
+        ultimaMarca = "teros";
+        }
+
+        /*
+        GUARDAR MEDIDAS
+        */
+        java.util.regex.Matcher matcher =
+                java.util.regex.Pattern
+                .compile("(\\d{2})")
+                .matcher(texto);
+
+        if (matcher.find()) {
+        ultimaMedida = matcher.group(1);
+        }
+
+        /*
+        COMPLETAR CONTEXTO
+        */
+        if (
+                !texto.contains("monitor") &&
+                !ultimaCategoria.isBlank()
+        ) {
+        texto += " " + ultimaCategoria;
+        }
+
+        if (
+                !texto.contains("msi") &&
+                !ultimaMarca.isBlank()
+        ) {
+        texto += " " + ultimaMarca;
+        }
+
+        if (
+                !texto.matches(".*\\d{2}.*") &&
+                !ultimaMedida.isBlank()
+        ) {
+        texto += " " + ultimaMedida;
+        }
 
         String intencion = detectarIntencion(texto);
 
@@ -950,8 +1023,9 @@ private String aplicarPersonalidad(String mensaje) {
                 String respuesta = 
                         procesarMensaje(mensaje); 
                 chat.setRespuesta(respuesta); 
+                String texto = mensaje.toLowerCase();
                 Producto producto = 
-                        productoDAO.buscarCoincidencia(mensaje); 
+                        productoDAO.buscarCoincidencia(texto); 
                 if (producto != null) { 
                         respuesta =
                         """
