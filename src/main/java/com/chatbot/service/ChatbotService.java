@@ -1019,11 +1019,42 @@ private String aplicarPersonalidad(String mensaje) {
         }
 
         public RespuestaChat procesarMensajeApi(String mensaje) { 
+                String texto = mensaje.toLowerCase();
+                if (texto.contains("monitor")) {
+                ultimaCategoria = "monitor";
+                }
+
+                if (texto.contains("mouse")) {
+                ultimaCategoria = "mouse";
+                }
+
+                if (texto.contains("teclado")) {
+                ultimaCategoria = "teclado";
+                }
+
+                if (texto.contains("laptop")) {
+                ultimaCategoria = "laptop";
+                }
+
+                if (
+                        !ultimaCategoria.isEmpty()
+                        &&
+                        (
+                        texto.contains("msi") ||
+                        texto.contains("asus") ||
+                        texto.contains("teros") ||
+                        texto.contains("logitech")
+                        )
+                ) {
+
+                mensaje =
+                        ultimaCategoria + " " + mensaje;
+                }
+
                 RespuestaChat chat = new RespuestaChat(); 
                 String respuesta = 
                         procesarMensaje(mensaje); 
                 chat.setRespuesta(respuesta); 
-                String texto = mensaje.toLowerCase();
                 Producto producto = 
                         productoDAO.buscarCoincidencia(texto); 
                 if (producto != null) { 
