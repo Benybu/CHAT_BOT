@@ -366,29 +366,34 @@ public class ProductoDAO {
                 break;
             }
         }
-
         /*
-        DETECTAR CATEGORIA AUTOMATICAMENTE
-        DESDE EL EXCEL
+        DETECTAR CATEGORIA REAL
         */
         String categoriaBuscada = null;
 
-        for (Producto prod : listarActivos()) {
+        String[] categoriasBase = {
+                "monitor",
+                "mouse",
+                "teclado",
+                "laptop",
+                "audifono",
+                "microfono",
+                "parlante",
+                "silla",
+                "fuente",
+                "placa",
+                "procesador",
+                "memoria",
+                "ssd",
+                "case",
+                "cooler"
+        };
 
-            if (prod.getCategoria() == null) {
-                continue;
-            }
+        for (String categoria : categoriasBase) {
 
-            String categoriaExcel =
-                    normalizar(prod.getCategoria());
+            if (texto.contains(categoria)) {
 
-            if (
-                    !categoriaExcel.isBlank()
-                    &&
-                    texto.contains(categoriaExcel)
-            ) {
-
-                categoriaBuscada = categoriaExcel;
+                categoriaBuscada = categoria;
                 break;
             }
         }
@@ -428,17 +433,19 @@ public class ProductoDAO {
             /*
             FILTRAR POR CATEGORIA
             */
-            if (
-                    categoriaBuscada != null
-                    &&
-                    (
-                        p.getCategoria() == null
-                        ||
-                        !normalizar(p.getCategoria())
-                            .contains(categoriaBuscada)
-                    )
-            ) {
-                continue;
+            if (categoriaBuscada != null) {
+
+                String textoProducto =
+                        (
+                            p.getNombre() + " " +
+                            p.getCategoria() + " " +
+                            p.getDescripcion() + " " +
+                            p.getTags()
+                        ).toLowerCase();
+
+                if (!textoProducto.contains(categoriaBuscada)) {
+                    continue;
+                }
             }
 
             int score = 0;
