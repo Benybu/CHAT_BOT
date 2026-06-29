@@ -382,7 +382,7 @@ public class ProductoDAO {
 
         java.util.regex.Matcher matcher =
                 java.util.regex.Pattern
-                .compile("(\\d{2})")
+                .compile("(\\d{2})\\s*(pulgada|pulgadas|')")
                 .matcher(texto);
 
         if (matcher.find()) {

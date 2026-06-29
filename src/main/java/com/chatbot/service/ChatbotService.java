@@ -1022,6 +1022,18 @@ private String aplicarPersonalidad(String mensaje) {
         public RespuestaChat procesarMensajeApi(String mensaje) { 
                 String texto = mensaje.toLowerCase();
                 /*
+                SI EL MENSAJE ES CORTO
+                O INCOMPLETO,
+                USAR CONTEXTO ANTERIOR
+                */
+                if (
+                        texto.split("\\s+").length <= 4
+                ) {
+
+                mensaje =
+                        ultimoContexto + " " + mensaje;
+                }
+                /*
                 SI EL MENSAJE ES INCOMPLETO,
                 USAR CONTEXTO ANTERIOR
                 */
@@ -1047,30 +1059,6 @@ private String aplicarPersonalidad(String mensaje) {
                 ) {
 
                 usarContexto = true;
-                }
-
-                /*
-                DETECTAR MARCAS AUTOMATICAMENTE
-                DESDE EL EXCEL
-                */
-                for (Producto prod : listarActivos()) {
-
-                if (prod.getMarca() == null) {
-                        continue;
-                }
-
-                String marca =
-                        normalizar(prod.getMarca());
-
-                if (
-                        !marca.isBlank()
-                        &&
-                        texto.contains(marca)
-                ) {
-
-                        usarContexto = true;
-                        break;
-                }
                 }
 
                 /*
@@ -1127,7 +1115,13 @@ private String aplicarPersonalidad(String mensaje) {
                         procesarMensaje(mensaje); 
                 chat.setRespuesta(respuesta); 
                 Producto producto = 
-                        productoDAO.buscarCoincidencia(texto); 
+                        productoDAO.buscarCoincidencia(texto);
+                if (producto != null) {
+                ultimoContexto =
+                        producto.getNombre() + " " +
+                        producto.getCategoria() + " " +
+                        producto.getMarca();
+                }
                 if (producto != null) { 
                         respuesta =
                         """
@@ -1168,6 +1162,7 @@ private String aplicarPersonalidad(String mensaje) {
                 );
                 }
                 ultimoContexto = texto;
+                
                 return chat;
         }
 }
