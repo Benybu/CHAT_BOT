@@ -1020,37 +1020,41 @@ private String aplicarPersonalidad(String mensaje) {
 
         public RespuestaChat procesarMensajeApi(String mensaje) { 
                 String texto = mensaje.toLowerCase();
-                if (texto.contains("monitor")) {
-                ultimaCategoria = "monitor";
-                }
+                for (Producto p : productoDAO.listarActivos()) {
 
-                if (texto.contains("mouse")) {
-                ultimaCategoria = "mouse";
-                }
+                        if (p.getMarca() == null) {
+                                continue;
+                        }
 
-                if (texto.contains("teclado")) {
-                ultimaCategoria = "teclado";
-                }
+                        String marca =
+                                p.getMarca().toLowerCase();
 
-                if (texto.contains("laptop")) {
-                ultimaCategoria = "laptop";
+                        if (texto.contains(marca)) {
+
+                                ultimaMarca = marca;
+
+                                break;
+                        }
                 }
 
                 if (
                         !ultimaCategoria.isEmpty()
                         &&
-                        (
-                        texto.contains("msi") ||
-                        texto.contains("asus") ||
-                        texto.contains("teros") ||
-                        texto.contains("logitech")
-                        )
+                        !texto.contains(ultimaCategoria)
                 ) {
 
                 mensaje =
                         ultimaCategoria + " " + mensaje;
                 }
+                if (
+                        !ultimaMarca.isEmpty()
+                        &&
+                        !texto.contains(ultimaMarca)
+                ) {
 
+                mensaje =
+                        mensaje + " " + ultimaMarca;
+                }
                 RespuestaChat chat = new RespuestaChat(); 
                 String respuesta = 
                         procesarMensaje(mensaje); 
