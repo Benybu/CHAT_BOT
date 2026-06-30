@@ -551,7 +551,7 @@ public class ProductoDAO {
         // ----------------------------
         // Detectar modelo
         // ----------------------------
-        for (Producto p : listarActivos()) {
+        for (Producto p : ProductoCache.obtenerProductos()) {
 
             if (p.getNombre() == null)
                 continue;
@@ -764,7 +764,7 @@ public class ProductoDAO {
 
             String medida = normalizar(p.getMedida());
 
-            if (medida.equals(busqueda.getMedida())) {
+            if (medida.contains(busqueda.getMedida())) {
 
                 resultado.add(p);
 
