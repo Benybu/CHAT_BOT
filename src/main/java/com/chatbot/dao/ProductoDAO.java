@@ -397,8 +397,9 @@ public class ProductoDAO {
             "los","las","me","que","en"
         };
 
-        List<Producto> productos = listarActivos();
-
+        List<Producto> productos = new ArrayList<>(
+            ProductoCache.obtenerProductos()
+        );
         productos = filtrarCategoria(productos, busqueda);
 
         productos = filtrarMarca(productos, busqueda);
@@ -408,6 +409,11 @@ public class ProductoDAO {
         productos = filtrarMedida(productos, busqueda);
 
         productos = filtrarAtributos(productos, busqueda);
+
+        productos = filtrarPorIndice(
+                productos,
+                palabrasUsuario
+        );
 
         return elegirMejorProducto(
                 productos,
@@ -976,6 +982,41 @@ public class ProductoDAO {
         score += p.getStock() / 10;
 
         return score;
+
+    }
+
+    private List<Producto> filtrarPorIndice(
+            List<Producto> productos,
+            String[] palabrasUsuario
+    ) {
+
+        List<Producto> candidatos = new ArrayList<>();
+
+        for (Producto p : productos) {
+
+            int coincidencias = 0;
+
+            for (String palabra : palabrasUsuario) {
+
+                palabra = normalizar(palabra);
+
+                if (palabra.length() <= 2) {
+                    continue;
+                }
+
+                if (p.getIndiceBusqueda().contains(palabra)) {
+                    coincidencias++;
+                }
+
+            }
+
+            if (coincidencias > 0) {
+                candidatos.add(p);
+            }
+
+        }
+
+        return candidatos;
 
     }
 

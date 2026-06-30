@@ -8,6 +8,12 @@ import java.util.Set;
 
 public class IndiceBusquedaBuilder {
 
+    private static final Set<String> STOP_WORDS = Set.of(
+            "de","del","la","las","el","los",
+            "para","con","sin","por","y",
+            "o","un","una","unos","unas"
+    );
+
     public static Set<String> construir(Producto producto) {
 
         Set<String> indice = new HashSet<>();
@@ -36,8 +42,28 @@ public class IndiceBusquedaBuilder {
 
         for (String palabra : palabras) {
 
-            if (!palabra.isBlank()) {
-                indice.add(palabra);
+            palabra = palabra.trim();
+
+            if (palabra.length() <= 1) {
+                continue;
+            }
+
+            if (STOP_WORDS.contains(palabra)) {
+                continue;
+            }
+
+            indice.add(palabra);
+
+            // Separar letras y números
+            String letras = palabra.replaceAll("[0-9]", "");
+            String numeros = palabra.replaceAll("[^0-9]", "");
+
+            if (letras.length() > 1) {
+                indice.add(letras);
+            }
+
+            if (numeros.length() > 0) {
+                indice.add(numeros);
             }
 
         }
