@@ -343,8 +343,14 @@ public class ProductoDAO {
         List<Producto> productos = listarActivos();
 
         productos = filtrarCategoria(productos, busqueda);
+
         productos = filtrarMarca(productos, busqueda);
+
+        productos = filtrarModelo(productos, busqueda);
+
         productos = filtrarMedida(productos, busqueda);
+
+        productos = filtrarAtributos(productos, busqueda);
 
         return elegirMejorProducto(
                 productos,
@@ -432,6 +438,87 @@ public class ProductoDAO {
 
         if (matcher.find()) {
             busqueda.setMedida(matcher.group(1));
+        }
+
+        // ----------------------------
+        // Detectar atributos
+        // ----------------------------
+
+        String[] atributos = {
+
+            "ips",
+            "va",
+            "tn",
+            "oled",
+
+            "fhd",
+            "qhd",
+            "uhd",
+            "4k",
+
+            "75hz",
+            "100hz",
+            "120hz",
+            "144hz",
+            "165hz",
+            "170hz",
+            "180hz",
+            "240hz",
+            "360hz",
+
+            "hdmi",
+            "displayport",
+            "dp",
+            "usb-c",
+            "usbc",
+
+            "curvo",
+            "plano"
+
+        };
+
+        for (String atributo : atributos) {
+
+            if (texto.contains(atributo)) {
+
+                busqueda.agregarAtributo(atributo);
+
+            }
+
+        }
+
+        // ----------------------------
+        // Detectar modelo
+        // ----------------------------
+        for (Producto p : listarActivos()) {
+
+            if (p.getNombre() == null)
+                continue;
+
+            String nombre = normalizar(p.getNombre());
+
+            String[] palabras = nombre.split("\\s+");
+
+            for (String palabra : palabras) {
+
+                if (palabra.length() < 5)
+                    continue;
+
+                if (!palabra.matches(".*\\d.*"))
+                    continue;
+
+                if (texto.contains(palabra)) {
+
+                    busqueda.setModelo(palabra);
+                    break;
+
+                }
+
+            }
+
+            if (busqueda.getModelo() != null)
+                break;
+
         }
 
         // ----------------------------
@@ -576,6 +663,76 @@ public class ProductoDAO {
 
     }
 
+    private List<Producto> filtrarAtributos(
+            List<Producto> productos,
+            Busqueda busqueda) {
+
+        if (busqueda.getAtributos().isEmpty()) {
+            return productos;
+        }
+
+        List<Producto> resultado = new ArrayList<>();
+
+        for (Producto p : productos) {
+
+            String nombre = normalizar(p.getNombre());
+            String tags = normalizar(p.getTags());
+            String descripcion = normalizar(p.getDescripcion());
+
+            String todo =
+                    nombre + " " +
+                    tags + " " +
+                    descripcion;
+
+            boolean cumple = true;
+
+            for (String atributo : busqueda.getAtributos()) {
+
+                if (!todo.contains(atributo)) {
+
+                    cumple = false;
+                    break;
+
+                }
+
+            }
+
+            if (cumple) {
+                resultado.add(p);
+            }
+
+        }
+
+        return resultado;
+
+    }
+
+    private List<Producto> filtrarModelo(
+            List<Producto> productos,
+            Busqueda busqueda) {
+
+        if (busqueda.getModelo() == null) {
+            return productos;
+        }
+
+        List<Producto> resultado = new ArrayList<>();
+
+        for (Producto p : productos) {
+
+            String nombre = normalizar(p.getNombre());
+
+            if (nombre.contains(busqueda.getModelo())) {
+
+                resultado.add(p);
+
+            }
+
+        }
+
+        return resultado;
+
+    }
+
     private int calcularScore(
             Producto p,
             String[] palabrasUsuario,
@@ -589,76 +746,103 @@ public class ProductoDAO {
         String descripcion = normalizar(p.getDescripcion());
 
         int score = 0;
-        int coincidencias = 0;
 
+        // ==========================
+        // MODELO (máxima prioridad)
+        // ==========================
+        if (busqueda.getModelo() != null &&
+                nombre.contains(busqueda.getModelo())) {
+
+            score += 500;
+
+        }
+
+        // ==========================
+        // NOMBRE
+        // ==========================
         for (String palabra : palabrasUsuario) {
-
-            palabra = palabra.trim();
-
-            boolean ignorarPalabra = false;
-
-            for (String x : ignorar) {
-
-                if (palabra.equals(x)) {
-                    ignorarPalabra = true;
-                    break;
-                }
-
-            }
-
-            if (ignorarPalabra)
-                continue;
 
             if (palabra.length() <= 2)
                 continue;
 
-            if (palabra.matches("\\d+"))
-                continue;
-
-            boolean encontro = false;
-
             if (nombre.contains(palabra)) {
 
-                score += 80;
-                encontro = true;
+                score += 300;
 
             }
 
-            if (categoria.contains(palabra)) {
+        }
+
+        // ==========================
+        // MARCA
+        // ==========================
+        if (busqueda.getMarca() != null &&
+                marca.contains(busqueda.getMarca())) {
+
+            score += 180;
+
+        }
+
+        // ==========================
+        // CATEGORIA
+        // ==========================
+        if (busqueda.getCategoria() != null &&
+                categoria.contains(busqueda.getCategoria())) {
+
+            score += 120;
+
+        }
+
+        // ==========================
+        // ATRIBUTOS
+        // ==========================
+        for (String atributo : busqueda.getAtributos()) {
+
+            if (nombre.contains(atributo)
+                    || tags.contains(atributo)
+                    || descripcion.contains(atributo)) {
 
                 score += 100;
-                encontro = true;
 
             }
 
-            if (marca.contains(palabra)) {
+        }
 
-                score += 70;
-                encontro = true;
+        // ==========================
+        // TAGS
+        // ==========================
+        for (String palabra : palabrasUsuario) {
 
-            }
+            if (palabra.length() <= 2)
+                continue;
 
             if (tags.contains(palabra)) {
 
-                score += 40;
-                encontro = true;
+                score += 60;
 
             }
+
+        }
+
+        // ==========================
+        // DESCRIPCION
+        // ==========================
+        for (String palabra : palabrasUsuario) {
+
+            if (palabra.length() <= 2)
+                continue;
 
             if (descripcion.contains(palabra)) {
 
                 score += 20;
-                encontro = true;
 
             }
 
-            if (encontro)
-                coincidencias++;
-
         }
 
-        score += coincidencias * 40;
-
+        // ==========================
+        // BARATO
+        // ==========================
         if (busqueda.isBarato() &&
                 p.getPrecio().doubleValue() <= 100) {
 
@@ -666,6 +850,9 @@ public class ProductoDAO {
 
         }
 
+        // ==========================
+        // PREMIUM
+        // ==========================
         if (busqueda.isPremium() &&
                 p.getPrecio().doubleValue() >= 500) {
 
@@ -673,6 +860,9 @@ public class ProductoDAO {
 
         }
 
+        // ==========================
+        // STOCK
+        // ==========================
         score += p.getStock() / 10;
 
         return score;

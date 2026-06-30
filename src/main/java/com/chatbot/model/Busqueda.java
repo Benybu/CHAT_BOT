@@ -1,4 +1,6 @@
 package com.chatbot.model;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Busqueda {
 
@@ -6,6 +8,7 @@ public class Busqueda {
     private String marca;
     private String modelo;
     private String medida;
+    private List<String> atributos = new ArrayList<>();
 
     private boolean barato;
     private boolean premium;
@@ -56,5 +59,20 @@ public class Busqueda {
 
     public void setPremium(boolean premium) {
         this.premium = premium;
+    }
+    public List<String> getAtributos() {
+        return atributos;
+    }
+
+    public void setAtributos(List<String> atributos) {
+        this.atributos = atributos;
+    }
+
+    public void agregarAtributo(String atributo) {
+
+        if (!atributos.contains(atributo)) {
+            atributos.add(atributo);
+        }
+
     }
 }
