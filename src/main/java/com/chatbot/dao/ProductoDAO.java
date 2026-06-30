@@ -2,6 +2,7 @@ package com.chatbot.dao;
 
 import com.chatbot.model.Producto;
 import com.chatbot.model.Busqueda;
+import com.chatbot.model.CatalogoBusqueda;
 
 import java.math.BigDecimal;
 import java.sql.*;
@@ -13,6 +14,7 @@ import java.sql.PreparedStatement;
 
 
 public class ProductoDAO {
+    private CatalogoBusqueda catalogo = new CatalogoBusqueda();
 
     private Producto map(ResultSet rs) throws SQLException {
 
@@ -126,6 +128,34 @@ public class ProductoDAO {
         }
 
         return lista;
+    }
+
+    private void construirCatalogo() {
+
+        catalogo = new CatalogoBusqueda();
+
+        for (Producto p : listarActivos()) {
+
+            catalogo.agregarCategoria(p.getCategoria());
+
+            catalogo.agregarMarca(p.getMarca());
+
+            catalogo.agregarModelo(p.getModelo());
+
+            if (p.getAtributos() != null) {
+
+                String[] lista = p.getAtributos().split(",");
+
+                for (String atributo : lista) {
+
+                    catalogo.agregarAtributo(atributo.trim());
+
+                }
+
+            }
+
+        }
+
     }
 
     public int contarActivos() {
@@ -406,50 +436,34 @@ public class ProductoDAO {
 
         Busqueda busqueda = new Busqueda();
 
+        construirCatalogo();
+
         String texto = normalizar(mensaje);
 
         // ----------------------------
         // Detectar marca
         // ----------------------------
-        for (Producto p : listarActivos()) {
+        for (String marca : catalogo.getMarcas()) {
 
-            if (p.getMarca() == null)
-                continue;
+            if (texto.contains(marca)) {
 
-            String marca = normalizar(p.getMarca());
-
-            if (!marca.isBlank() && texto.contains(marca)) {
                 busqueda.setMarca(marca);
                 break;
+
             }
+
         }
 
         // ----------------------------
         // Detectar categoría
         // ----------------------------
-        String[] categorias = {
-                "monitor",
-                "mouse",
-                "teclado",
-                "laptop",
-                "audifono",
-                "microfono",
-                "parlante",
-                "silla",
-                "fuente",
-                "placa",
-                "procesador",
-                "memoria",
-                "ssd",
-                "case",
-                "cooler"
-        };
-
-        for (String categoria : categorias) {
+        for (String categoria : catalogo.getCategorias()) {
 
             if (texto.contains(categoria)) {
+
                 busqueda.setCategoria(categoria);
                 break;
+
             }
 
         }
@@ -457,19 +471,15 @@ public class ProductoDAO {
         // ----------------------------
         // Detectar modelo
         // ----------------------------
-        for (Producto p : listarActivos()) {
+        for (String modelo : catalogo.getModelos()) {
 
-            if (p.getModelo() == null)
-                continue;
-
-            String modelo = normalizar(p.getModelo());
-
-            if (!modelo.isBlank() && texto.contains(modelo)) {
+            if (texto.contains(modelo)) {
 
                 busqueda.setModelo(modelo);
                 break;
 
             }
+
         }
 
         // ----------------------------
@@ -488,7 +498,7 @@ public class ProductoDAO {
         // Detectar atributos
         // ----------------------------
 
-        String[] atributos = {
+        String[] atributosDetectables = {
 
             "ips",
             "va",
@@ -521,7 +531,7 @@ public class ProductoDAO {
 
         };
 
-        for (String atributo : atributos) {
+        for (String atributo : atributosDetectables) {
 
             if (texto.contains(atributo)) {
 
@@ -573,6 +583,61 @@ public class ProductoDAO {
                 texto.contains("economico") ||
                 texto.contains("económico")
         );
+
+        // ----------------------------
+        // Detectar atributos
+        // ----------------------------
+
+        String[] atributos = {
+
+            "ips",
+            "va",
+            "oled",
+            "tn",
+
+            "fhd",
+            "full hd",
+            "qhd",
+            "2k",
+            "4k",
+            "uhd",
+
+            "75hz",
+            "100hz",
+            "120hz",
+            "144hz",
+            "165hz",
+            "170hz",
+            "180hz",
+            "240hz",
+            "360hz",
+
+            "1ms",
+            "5ms",
+
+            "hdmi",
+            "displayport",
+            "dp",
+            "vga",
+            "dvi",
+            "usb",
+            "usb-c",
+            "type-c",
+
+            "curvo",
+            "plano"
+
+        };
+
+        for (String atributo : atributos) {
+
+            if (texto.contains(atributo)) {
+
+                busqueda.agregarAtributo(atributo);
+
+            }
+
+        }
 
         // ----------------------------
         // Detectar premium
@@ -678,7 +743,8 @@ public class ProductoDAO {
             List<Producto> productos,
             Busqueda busqueda) {
 
-        if (busqueda.getMedida() == null) {
+        if (busqueda.getMedida() == null ||
+            busqueda.getMedida().isBlank()) {
             return productos;
         }
 
@@ -686,19 +752,15 @@ public class ProductoDAO {
 
         for (Producto p : productos) {
 
-            String nombre = normalizar(p.getNombre());
-            String categoria = normalizar(p.getCategoria());
-            String descripcion = normalizar(p.getDescripcion());
-            String tags = normalizar(p.getTags());
+            if (p.getMedida() == null)
+                continue;
 
-            String todo =
-                    nombre + " " +
-                    categoria + " " +
-                    descripcion + " " +
-                    tags;
+            String medida = normalizar(p.getMedida());
 
-            if (todo.contains(busqueda.getMedida())) {
+            if (medida.equals(busqueda.getMedida())) {
+
                 resultado.add(p);
+
             }
 
         }
@@ -711,7 +773,9 @@ public class ProductoDAO {
             List<Producto> productos,
             Busqueda busqueda) {
 
-        if (busqueda.getAtributos().isEmpty()) {
+        if (busqueda.getAtributos() == null ||
+            busqueda.getAtributos().isEmpty()) {
+
             return productos;
         }
 
@@ -719,20 +783,16 @@ public class ProductoDAO {
 
         for (Producto p : productos) {
 
-            String nombre = normalizar(p.getNombre());
-            String tags = normalizar(p.getTags());
-            String descripcion = normalizar(p.getDescripcion());
+            if (p.getAtributos() == null)
+                continue;
 
-            String todo =
-                    nombre + " " +
-                    tags + " " +
-                    descripcion;
+            String atributos = normalizar(p.getAtributos());
 
             boolean cumple = true;
 
             for (String atributo : busqueda.getAtributos()) {
 
-                if (!todo.contains(atributo)) {
+                if (!atributos.contains(normalizar(atributo))) {
 
                     cumple = false;
                     break;
@@ -742,7 +802,9 @@ public class ProductoDAO {
             }
 
             if (cumple) {
+
                 resultado.add(p);
+
             }
 
         }
@@ -763,9 +825,12 @@ public class ProductoDAO {
 
         for (Producto p : productos) {
 
-            String nombre = normalizar(p.getNombre());
+            if (p.getModelo() == null)
+                continue;
 
-            if (nombre.contains(busqueda.getModelo())) {
+            String modelo = normalizar(p.getModelo());
+
+            if (modelo.equals(busqueda.getModelo())) {
 
                 resultado.add(p);
 
