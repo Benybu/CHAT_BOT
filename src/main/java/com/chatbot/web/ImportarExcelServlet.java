@@ -60,31 +60,36 @@ public class ImportarExcelServlet extends HttpServlet {
             Producto p = new Producto();
 
             p.setSku(getTexto(fila.getCell(0)));
+
             p.setNombre(getTexto(fila.getCell(1)));
+
             p.setCategoria(getTexto(fila.getCell(2)));
+
             p.setMarca(getTexto(fila.getCell(3)));
+
+            p.setModelo(getTexto(fila.getCell(4)));
+
+            p.setMedida(getTexto(fila.getCell(5)));
+
+            p.setAtributos(getTexto(fila.getCell(6)));
+
+            p.setDescripcion(getTexto(fila.getCell(7)));
+
+            p.setTags(getTexto(fila.getCell(8)));
 
             p.setPrecio(
                     BigDecimal.valueOf(
-                            getNumero(fila.getCell(4))
+                            getNumero(fila.getCell(9))
                     )
             );
 
             p.setStock(
-                    (int) getNumero(fila.getCell(5))
+                    (int) getNumero(fila.getCell(10))
             );
 
-            p.setDescripcion(
-                    getTexto(fila.getCell(6))
-            );
-
-            p.setTags(
-                    getTexto(fila.getCell(7))
-            );
-
-            p.setImagen( 
-                getTexto(fila.getCell(8)) 
-                    .replace(" ", "") 
+            p.setImagen(
+                    getTexto(fila.getCell(11))
+                            .replace(" ", "")
             );
 
             p.setActivo(true);

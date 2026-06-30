@@ -16,19 +16,27 @@ public class ProductoDAO {
 
     private Producto map(ResultSet rs) throws SQLException {
 
-        return new Producto(
-                rs.getInt("id"),
-                rs.getString("sku"),
-                rs.getString("nombre"),
-                rs.getBigDecimal("precio"),
-                rs.getInt("stock"),
-                rs.getString("descripcion"),
-                rs.getBoolean("estado"),
-                rs.getString("categoria"),
-                rs.getString("marca"),
-                rs.getString("tags"),
-                rs.getString("imagen")
-        );
+        Producto p = new Producto();
+
+        p.setId(rs.getInt("id"));
+        p.setSku(rs.getString("sku"));
+        p.setNombre(rs.getString("nombre"));
+        p.setPrecio(rs.getBigDecimal("precio"));
+        p.setStock(rs.getInt("stock"));
+        p.setDescripcion(rs.getString("descripcion"));
+        p.setActivo(rs.getBoolean("estado"));
+
+        p.setCategoria(rs.getString("categoria"));
+        p.setMarca(rs.getString("marca"));
+
+        p.setModelo(rs.getString("modelo"));
+        p.setMedida(rs.getString("medida"));
+        p.setAtributos(rs.getString("atributos"));
+
+        p.setTags(rs.getString("tags"));
+        p.setImagen(rs.getString("imagen"));
+
+        return p;
     }
 
     public Producto buscarCoincidenciaConPresupuesto(
@@ -191,10 +199,13 @@ public class ProductoDAO {
                 estado,
                 categoria,
                 marca,
+                modelo,
+                medida,
+                atributos,
                 tags,
                 imagen
                 )
-                VALUES(?,?,?,?,?,?,?,?,?,?)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
                 """;
 
         try (
@@ -223,9 +234,15 @@ public class ProductoDAO {
 
             ps.setString(8, p.getMarca());
 
-            ps.setString(9, p.getTags());
+            ps.setString(9, p.getModelo());
 
-            ps.setString(10, p.getImagen());
+            ps.setString(10, p.getMedida());
+
+            ps.setString(11, p.getAtributos());
+
+            ps.setString(12, p.getTags());
+
+            ps.setString(13, p.getImagen());
 
             ps.executeUpdate();
 
@@ -246,6 +263,9 @@ public class ProductoDAO {
                 estado=?,
                 categoria=?,
                 marca=?,
+                modelo=?,
+                medida=?,
+                atributos=?,
                 tags=?,
                 imagen=?
                 WHERE id=?
@@ -277,11 +297,17 @@ public class ProductoDAO {
 
             ps.setString(8, p.getMarca());
 
-            ps.setString(9, p.getTags());
+            ps.setString(9, p.getModelo());
 
-            ps.setString(10, p.getImagen());
+            ps.setString(10, p.getMedida());
 
-            ps.setInt(11, p.getId());
+            ps.setString(11, p.getAtributos());
+
+            ps.setString(12, p.getTags());
+
+            ps.setString(13, p.getImagen());
+
+            ps.setInt(14, p.getId());
 
             ps.executeUpdate();
 
@@ -426,6 +452,24 @@ public class ProductoDAO {
                 break;
             }
 
+        }
+
+        // ----------------------------
+        // Detectar modelo
+        // ----------------------------
+        for (Producto p : listarActivos()) {
+
+            if (p.getModelo() == null)
+                continue;
+
+            String modelo = normalizar(p.getModelo());
+
+            if (!modelo.isBlank() && texto.contains(modelo)) {
+
+                busqueda.setModelo(modelo);
+                break;
+
+            }
         }
 
         // ----------------------------

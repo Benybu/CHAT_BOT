@@ -15,6 +15,9 @@ public class Producto {
     // NUEVOS CAMPOS
     private String categoria;
     private String marca;
+    private String modelo;
+    private String medida;
+    private String atributos;
     private String tags;
     private String imagen;
 
@@ -133,6 +136,30 @@ public class Producto {
 
     public void setMarca(String marca) {
         this.marca = marca;
+    }
+
+    public String getModelo() {
+        return modelo;
+    }
+
+    public void setModelo(String modelo) {
+        this.modelo = modelo;
+    }
+
+    public String getMedida() {
+        return medida;
+    }
+
+    public void setMedida(String medida) {
+        this.medida = medida;
+    }
+
+    public String getAtributos() {
+        return atributos;
+    }
+
+    public void setAtributos(String atributos) {
+        this.atributos = atributos;
     }
 
     public String getTags() {
