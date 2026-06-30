@@ -3,6 +3,7 @@ package com.chatbot.dao;
 import com.chatbot.model.Producto;
 import com.chatbot.model.Busqueda;
 import com.chatbot.model.CatalogoBusqueda;
+import com.chatbot.service.ProductoCache;
 
 import java.math.BigDecimal;
 import java.sql.*;
@@ -53,7 +54,7 @@ public class ProductoDAO {
         String texto =
                 normalizar(mensaje);
 
-        for (Producto p : listarActivos()) {
+        for (Producto p : ProductoCache.obtenerProductos()) {
 
             if (
                     p.getPrecio().doubleValue()
@@ -64,21 +65,18 @@ public class ProductoDAO {
 
             int score = 0;
 
-            String contenido =
-                    (
-                            p.getNombre() + " " +
-                            p.getCategoria() + " " +
-                            p.getMarca() + " " +
-                            p.getTags()
-                    ).toLowerCase();
-
             for (String palabra : texto.split("\\s+")) {
 
-                if (
-                        contenido.contains(palabra)
-                ) {
+                palabra = palabra.trim();
+
+                if (palabra.isBlank()) {
+                    continue;
+                }
+
+                if (p.getIndiceBusqueda().contains(palabra)) {
                     score += 10;
                 }
+
             }
 
             if (score > mejorScore) {

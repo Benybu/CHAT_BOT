@@ -11,6 +11,7 @@ import com.chatbot.model.PersonalidadChatbot;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import com.chatbot.model.RespuestaChat;
+import com.chatbot.service.ProductoCache;
 
 import java.util.List;
 import java.util.Random;
@@ -28,6 +29,18 @@ public class ChatbotService {
         private final OpenAIService openAIService = new OpenAIService();
         private final Random random = new Random();
         private final PersonalidadChatbot personalidad = PersonalidadChatbot.GAMER;
+
+        public ChatbotService() {
+
+        if (ProductoCache.obtenerProductos().isEmpty()) {
+
+                ProductoCache.cargar(
+                        productoDAO.listarActivos()
+                );
+
+        }
+
+        }
 
         private Double extraerPresupuesto(String texto) {
 
