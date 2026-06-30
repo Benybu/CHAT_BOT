@@ -106,6 +106,9 @@ public class ProductoDAO {
                 estado,
                 categoria,
                 marca,
+                modelo,
+                medida,
+                atributos,
                 tags,
                 imagen
                 FROM productos

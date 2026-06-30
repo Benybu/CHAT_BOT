@@ -1,6 +1,8 @@
 package com.chatbot.model;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
+import java.util.Set;
 
 public class Producto {
 
@@ -20,6 +22,8 @@ public class Producto {
     private String atributos;
     private String tags;
     private String imagen;
+    // Índice utilizado por el buscador inteligente
+    private Set<String> indiceBusqueda = new HashSet<>();
 
     public Producto() {
     }
@@ -183,5 +187,13 @@ public class Producto {
 
     public void setSku(String sku) {
         this.sku = sku;
+    }
+
+    public Set<String> getIndiceBusqueda() {
+        return indiceBusqueda;
+    }
+
+    public void setIndiceBusqueda(Set<String> indiceBusqueda) {
+        this.indiceBusqueda = indiceBusqueda;
     }
 }

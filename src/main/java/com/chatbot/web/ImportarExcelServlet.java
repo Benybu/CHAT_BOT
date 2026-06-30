@@ -2,6 +2,7 @@ package com.chatbot.web;
 
 import com.chatbot.dao.ProductoDAO;
 import com.chatbot.model.Producto;
+import com.chatbot.dao.IndiceBusquedaBuilder;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
@@ -93,6 +94,11 @@ public class ImportarExcelServlet extends HttpServlet {
             );
 
             p.setActivo(true);
+
+            // Generar índice de búsqueda
+            p.setIndiceBusqueda(
+                    IndiceBusquedaBuilder.construir(p)
+            );
 
             productoDAO.guardarOActualizar(p);
         }
