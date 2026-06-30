@@ -386,6 +386,15 @@ public class ProductoDAO {
 
         Busqueda busqueda = analizarMensaje(mensaje);
 
+        System.out.println("========== BUSQUEDA ==========");
+        System.out.println("Mensaje: " + mensaje);
+        System.out.println("Categoria: " + busqueda.getCategoria());
+        System.out.println("Marca: " + busqueda.getMarca());
+        System.out.println("Modelo: " + busqueda.getModelo());
+        System.out.println("Medida: " + busqueda.getMedida());
+        System.out.println("Atributos: " + busqueda.getAtributos());
+        System.out.println("==============================");
+
         String[] palabrasUsuario = texto.split("\\s+");
 
         String[] ignorar = {
@@ -401,19 +410,25 @@ public class ProductoDAO {
             ProductoCache.obtenerProductos()
         );
         productos = filtrarCategoria(productos, busqueda);
+        System.out.println("Después de categoria: " + productos.size());
 
         productos = filtrarMarca(productos, busqueda);
+        System.out.println("Después de marca: " + productos.size());
 
         productos = filtrarModelo(productos, busqueda);
+        System.out.println("Después de modelo: " + productos.size());
 
         productos = filtrarMedida(productos, busqueda);
+        System.out.println("Después de medida: " + productos.size());
 
         productos = filtrarAtributos(productos, busqueda);
+        System.out.println("Después de atributos: " + productos.size());
 
         productos = filtrarPorIndice(
                 productos,
                 palabrasUsuario
         );
+        System.out.println("Después del índice: " + productos.size());
 
         return elegirMejorProducto(
                 productos,
