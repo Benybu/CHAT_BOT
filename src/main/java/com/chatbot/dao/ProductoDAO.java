@@ -322,16 +322,12 @@ public class ProductoDAO {
     public Producto buscarCoincidencia(String mensaje) {
 
         String texto = normalizar(mensaje);
-        Busqueda busqueda = analizarMensaje(mensaje);
 
         if (contieneCategoriaInexistente(texto)) {
             return null;
         }
-        List<Producto> productos = listarActivos();
-        productos = filtrarCategoria(productos, busqueda);
 
-        Producto mejorProducto = null;
-        int mejorScore = -1;
+        Busqueda busqueda = analizarMensaje(mensaje);
 
         String[] palabrasUsuario = texto.split("\\s+");
 
@@ -343,167 +339,18 @@ public class ProductoDAO {
             "por","favor","el","la",
             "los","las","me","que","en"
         };
-        /*
-        * RECORRER PRODUCTOS
-        */
-        for (Producto p : productos) {
 
-            String nombre = normalizar(p.getNombre());
-            String categoria = normalizar(p.getCategoria());
-            String marca = normalizar(p.getMarca());
-            String tags = normalizar(p.getTags());
-            String descripcion = normalizar(p.getDescripcion());
+        List<Producto> productos = listarActivos();
 
-            /*
-            * FILTRAR MARCA
-            */
-            if (busqueda.getMarca() != null &&
-                !marca.contains(busqueda.getMarca())) {
+        productos = filtrarCategoria(productos, busqueda);
+        productos = filtrarMarca(productos, busqueda);
+        productos = filtrarMedida(productos, busqueda);
 
-                continue;
-
-            }
-
-            /*
-            * FILTRAR MEDIDA
-            */
-            if (busqueda.getMedida() != null) {
-
-                String todo =
-                        nombre + " " +
-                        categoria + " " +
-                        descripcion + " " +
-                        tags;
-
-                if (!todo.contains(busqueda.getMedida()))
-                    continue;
-            }
-
-            int score = 0;
-            int coincidencias = 0;
-
-            /*
-            * CALCULAR SCORE
-            */
-            for (String palabra : palabrasUsuario) {
-
-                palabra = palabra.trim();
-
-                boolean ignorarPalabra = false;
-
-                for (String x : ignorar) {
-
-                    if (palabra.equals(x)) {
-
-                        ignorarPalabra = true;
-                        break;
-
-                    }
-
-                }
-
-                if (ignorarPalabra)
-                    continue;
-
-                if (palabra.length() <= 2)
-                    continue;
-
-                if (palabra.matches("\\d+"))
-                    continue;
-
-                boolean encontro = false;
-
-                if (nombre.contains(palabra)) {
-
-                    score += 80;
-                    encontro = true;
-
-                }
-
-                if (categoria.contains(palabra)) {
-
-                    score += 100;
-                    encontro = true;
-
-                }
-
-                if (marca.contains(palabra)) {
-
-                    score += 70;
-                    encontro = true;
-
-                }
-
-                if (tags.contains(palabra)) {
-
-                    score += 40;
-                    encontro = true;
-
-                }
-
-                if (descripcion.contains(palabra)) {
-
-                    score += 20;
-                    encontro = true;
-
-                }
-
-                if (encontro)
-                    coincidencias++;
-
-            }
-
-            /*
-            * BONUS
-            */
-            score += coincidencias * 40;
-
-            /*
-            * BARATO
-            */
-            if (busqueda.isBarato() &&
-                p.getPrecio().doubleValue() <= 100) {
-
-                score += 50;
-
-            }
-
-            /*
-            * PREMIUM
-            */
-            if (busqueda.isPremium() &&
-                p.getPrecio().doubleValue() >= 500) {
-
-                score += 40;
-
-            }
-
-            /*
-            * STOCK
-            */
-            score += p.getStock() / 10;
-
-            if (score > mejorScore) {
-
-                mejorScore = score;
-                mejorProducto = p;
-
-            }
-
-        }
-
-        System.out.println("Mejor score = " + mejorScore);
-
-        if (mejorProducto != null) {
-            System.out.println("Producto: " + mejorProducto.getNombre());
-        } else {
-            System.out.println("NO ENCONTRO PRODUCTO");
-        }
-
-        if (mejorScore < 20)
-            return null;
-
-        return mejorProducto;
+        return elegirMejorProducto(
+                productos,
+                palabrasUsuario,
+                ignorar,
+                busqueda);
 
     }
 
@@ -666,6 +513,215 @@ public class ProductoDAO {
         }
 
         return resultado;
+
+    }
+
+    private List<Producto> filtrarMarca(
+            List<Producto> productos,
+            Busqueda busqueda) {
+
+        if (busqueda.getMarca() == null) {
+            return productos;
+        }
+
+        List<Producto> resultado = new ArrayList<>();
+
+        for (Producto p : productos) {
+
+            String marca = normalizar(p.getMarca());
+
+            if (marca == null)
+                continue;
+
+            if (marca.contains(busqueda.getMarca())) {
+                resultado.add(p);
+            }
+
+        }
+
+        return resultado;
+
+    }
+
+    private List<Producto> filtrarMedida(
+            List<Producto> productos,
+            Busqueda busqueda) {
+
+        if (busqueda.getMedida() == null) {
+            return productos;
+        }
+
+        List<Producto> resultado = new ArrayList<>();
+
+        for (Producto p : productos) {
+
+            String nombre = normalizar(p.getNombre());
+            String categoria = normalizar(p.getCategoria());
+            String descripcion = normalizar(p.getDescripcion());
+            String tags = normalizar(p.getTags());
+
+            String todo =
+                    nombre + " " +
+                    categoria + " " +
+                    descripcion + " " +
+                    tags;
+
+            if (todo.contains(busqueda.getMedida())) {
+                resultado.add(p);
+            }
+
+        }
+
+        return resultado;
+
+    }
+
+    private int calcularScore(
+            Producto p,
+            String[] palabrasUsuario,
+            String[] ignorar,
+            Busqueda busqueda) {
+
+        String nombre = normalizar(p.getNombre());
+        String categoria = normalizar(p.getCategoria());
+        String marca = normalizar(p.getMarca());
+        String tags = normalizar(p.getTags());
+        String descripcion = normalizar(p.getDescripcion());
+
+        int score = 0;
+        int coincidencias = 0;
+
+        for (String palabra : palabrasUsuario) {
+
+            palabra = palabra.trim();
+
+            boolean ignorarPalabra = false;
+
+            for (String x : ignorar) {
+
+                if (palabra.equals(x)) {
+                    ignorarPalabra = true;
+                    break;
+                }
+
+            }
+
+            if (ignorarPalabra)
+                continue;
+
+            if (palabra.length() <= 2)
+                continue;
+
+            if (palabra.matches("\\d+"))
+                continue;
+
+            boolean encontro = false;
+
+            if (nombre.contains(palabra)) {
+
+                score += 80;
+                encontro = true;
+
+            }
+
+            if (categoria.contains(palabra)) {
+
+                score += 100;
+                encontro = true;
+
+            }
+
+            if (marca.contains(palabra)) {
+
+                score += 70;
+                encontro = true;
+
+            }
+
+            if (tags.contains(palabra)) {
+
+                score += 40;
+                encontro = true;
+
+            }
+
+            if (descripcion.contains(palabra)) {
+
+                score += 20;
+                encontro = true;
+
+            }
+
+            if (encontro)
+                coincidencias++;
+
+        }
+
+        score += coincidencias * 40;
+
+        if (busqueda.isBarato() &&
+                p.getPrecio().doubleValue() <= 100) {
+
+            score += 50;
+
+        }
+
+        if (busqueda.isPremium() &&
+                p.getPrecio().doubleValue() >= 500) {
+
+            score += 40;
+
+        }
+
+        score += p.getStock() / 10;
+
+        return score;
+
+    }
+
+    private Producto elegirMejorProducto(
+            List<Producto> productos,
+            String[] palabrasUsuario,
+            String[] ignorar,
+            Busqueda busqueda) {
+
+        Producto mejorProducto = null;
+        int mejorScore = -1;
+
+        for (Producto p : productos) {
+
+            int score = calcularScore(
+                    p,
+                    palabrasUsuario,
+                    ignorar,
+                    busqueda);
+
+            if (score > mejorScore) {
+
+                mejorScore = score;
+                mejorProducto = p;
+
+            }
+
+        }
+
+        System.out.println("Mejor score = " + mejorScore);
+
+        if (mejorProducto != null) {
+
+            System.out.println("Producto: " + mejorProducto.getNombre());
+
+        } else {
+
+            System.out.println("NO ENCONTRO PRODUCTO");
+
+        }
+
+        if (mejorScore < 20) {
+            return null;
+        }
+
+        return mejorProducto;
 
     }
 
