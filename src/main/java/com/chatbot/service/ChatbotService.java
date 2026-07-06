@@ -1549,10 +1549,40 @@ private String aplicarPersonalidad(String mensaje) {
 
                 if (producto != null) {
 
-                ultimoContexto =
-                        producto.getNombre() + " " +
-                        producto.getCategoria() + " " +
-                        producto.getMarca();
+                /*
+                ANTES: SE GUARDABA producto.getNombre()/getCategoria()/
+                getMarca() TAL CUAL VIENEN DE LA BASE DE DATOS (ej.
+                "SILLA GAMER"), MIENTRAS QUE LAS COMPARACIONES DE MAS
+                ABAJO (ej. !texto.contains(ultimaCategoria)) ASUMEN
+                TODO EN MINUSCULAS. AL NO COINCIDIR MAYUSCULAS/
+                MINUSCULAS, EL SISTEMA CREIA QUE LA CATEGORIA/MARCA
+                TODAVIA NO ESTABA EN EL TEXTO Y LA VOLVIA A PEGAR EN
+                CADA TURNO, DUPLICANDO EL CONTEXTO UNA Y OTRA VEZ
+                (ej. "silla gamer" REPETIDO VARIAS VECES EN EL MISMO
+                MENSAJE). ESO INFLABA EL PUNTAJE POR NOMBRE DEL
+                PRODUCTO ANTERIOR (CADA PALABRA REPETIDA SUMA PUNTOS
+                DE NUEVO) Y TERMINABA GANANDO SIEMPRE EL MISMO
+                PRODUCTO YA MOSTRADO, IGNORANDO ATRIBUTOS NUEVOS
+                COMO UN COLOR DISTINTO.
+
+                AHORA: SE GUARDA TODO EN MINUSCULAS Y SIN CONCATENAR
+                "null" CUANDO ALGUN CAMPO VIENE VACIO.
+                */
+                StringBuilder contexto = new StringBuilder();
+
+                if (producto.getNombre() != null) {
+                        contexto.append(producto.getNombre());
+                }
+
+                if (producto.getCategoria() != null) {
+                        contexto.append(" ").append(producto.getCategoria());
+                }
+
+                if (producto.getMarca() != null) {
+                        contexto.append(" ").append(producto.getMarca());
+                }
+
+                ultimoContexto = contexto.toString().toLowerCase();
 
                 if (producto.getMarca() != null) {
                         ultimaMarca = producto.getMarca().toLowerCase();
