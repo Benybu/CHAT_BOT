@@ -52,11 +52,41 @@ public class ChatbotService {
 
         private Double extraerPresupuesto(String texto) {
 
+        String t = texto.toLowerCase();
+
+        /*
+        SOLO CONSIDERAR "PRESUPUESTO" SI HAY UNA
+        SEÑAL REAL DE QUE EL CLIENTE HABLA DE DINERO.
+        SIN ESTO, CUALQUIER NUMERO (24 PULGADAS, 144HZ,
+        8GB, ETC.) SE INTERPRETABA COMO UN PRESUPUESTO
+        EN SOLES Y DESVIABA TODA LA BUSQUEDA.
+        */
+        boolean tieneSenalDePresupuesto =
+                t.contains("s/") ||
+                t.contains("soles") ||
+                t.contains("presupuesto") ||
+                t.contains("hasta") ||
+                t.contains("menos de") ||
+                t.contains("maximo") ||
+                t.contains("máximo") ||
+                t.contains("tengo");
+
+        if (!tieneSenalDePresupuesto) {
+                return null;
+        }
+
+        /*
+        IGNORA NUMEROS PEGADOS A UNIDADES TECNICAS
+        (PULGADAS, HZ, GB, MS, ETC.) PARA QUE NO SE
+        CONFUNDAN CON UN MONTO EN SOLES.
+        */
         Pattern pattern =
-                Pattern.compile("(\\d{2,6})");
+                Pattern.compile(
+                        "(\\d{2,6})(?!\\s*(pulgadas?|\"|'|hz|ghz|mhz|gb|mb|tb|w|ms|dpi))"
+                );
 
         Matcher matcher =
-                pattern.matcher(texto);
+                pattern.matcher(t);
 
         if (matcher.find()) {
 

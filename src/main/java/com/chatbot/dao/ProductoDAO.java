@@ -65,11 +65,15 @@ public class ProductoDAO {
 
             int score = 0;
 
-            for (String palabra : texto.split("\\s+")) {
+            /*
+            SE LIMPIA PUNTUACION (ej. "pulgadas??" -> "pulgadas")
+            PARA QUE LA COMPARACION CONTRA EL INDICE SEA CORRECTA
+            */
+            for (String palabra : texto.split("[^a-z0-9]+")) {
 
                 palabra = palabra.trim();
 
-                if (palabra.isBlank()) {
+                if (palabra.length() <= 2) {
                     continue;
                 }
 
@@ -84,6 +88,15 @@ public class ProductoDAO {
                 mejorScore = score;
                 mejor = p;
             }
+        }
+
+        /*
+        SI NINGUN PRODUCTO BARATO TIENE RELACION REAL
+        CON LO QUE PIDIO EL CLIENTE, NO DEVOLVER NADA
+        EN VEZ DE "EL PRIMERO BARATO QUE ENCONTRÓ".
+        */
+        if (mejorScore <= 0) {
+            return null;
         }
 
         return mejor;
