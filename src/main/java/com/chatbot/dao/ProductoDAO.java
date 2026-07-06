@@ -159,6 +159,69 @@ public class ProductoDAO {
 
     }
 
+    /*
+    COMPARA UNA CATEGORIA DEL CATALOGO (ej: "monitores",
+    "procesadores", "teclados de pc") CONTRA EL TEXTO DEL
+    CLIENTE, TOLERANDO SINGULAR/PLURAL (ej: "monitor" debe
+    encontrar "monitores").
+    */
+    private boolean coincideConCategoria(String texto, String categoria) {
+
+        String[] stopwords = {"de", "del", "la", "el", "los", "las", "para", "pc", "y"};
+
+        for (String palabra : categoria.split("\\s+")) {
+
+            if (palabra.length() <= 2) {
+                continue;
+            }
+
+            boolean esStopword = false;
+
+            for (String sw : stopwords) {
+                if (palabra.equals(sw)) {
+                    esStopword = true;
+                    break;
+                }
+            }
+
+            if (esStopword) {
+                continue;
+            }
+
+            if (texto.contains(palabra)) {
+                return true;
+            }
+
+            String singular = quitarPlural(palabra);
+
+            if (!singular.equals(palabra) && texto.contains(singular)) {
+                return true;
+            }
+
+        }
+
+        return false;
+
+    }
+
+    /*
+    QUITA UN SUFIJO PLURAL SIMPLE EN ESPAÑOL
+    (monitores -> monitor, teclados -> teclado, discos -> disco)
+    */
+    private String quitarPlural(String palabra) {
+
+        if (palabra.endsWith("es") && palabra.length() >= 6) {
+            return palabra.substring(0, palabra.length() - 2);
+        }
+
+        if (palabra.endsWith("s") && palabra.length() >= 5) {
+            return palabra.substring(0, palabra.length() - 1);
+        }
+
+        return palabra;
+
+    }
+
     public int contarActivos() {
 
         String sql = "SELECT COUNT(*) FROM productos WHERE estado = 1";
@@ -386,15 +449,6 @@ public class ProductoDAO {
 
         Busqueda busqueda = analizarMensaje(mensaje);
 
-        System.out.println("========== BUSQUEDA ==========");
-        System.out.println("Mensaje: " + mensaje);
-        System.out.println("Categoria: " + busqueda.getCategoria());
-        System.out.println("Marca: " + busqueda.getMarca());
-        System.out.println("Modelo: " + busqueda.getModelo());
-        System.out.println("Medida: " + busqueda.getMedida());
-        System.out.println("Atributos: " + busqueda.getAtributos());
-        System.out.println("==============================");
-
         String[] palabrasUsuario = texto.split("\\s+");
 
         String[] ignorar = {
@@ -410,25 +464,19 @@ public class ProductoDAO {
             ProductoCache.obtenerProductos()
         );
         productos = filtrarCategoria(productos, busqueda);
-        System.out.println("Después de categoria: " + productos.size());
 
         productos = filtrarMarca(productos, busqueda);
-        System.out.println("Después de marca: " + productos.size());
 
         productos = filtrarModelo(productos, busqueda);
-        System.out.println("Después de modelo: " + productos.size());
 
         productos = filtrarMedida(productos, busqueda);
-        System.out.println("Después de medida: " + productos.size());
 
         productos = filtrarAtributos(productos, busqueda);
-        System.out.println("Después de atributos: " + productos.size());
 
         productos = filtrarPorIndice(
                 productos,
                 palabrasUsuario
         );
-        System.out.println("Después del índice: " + productos.size());
 
         return elegirMejorProducto(
                 productos,
@@ -481,7 +529,7 @@ public class ProductoDAO {
         // ----------------------------
         for (String categoria : catalogo.getCategorias()) {
 
-            if (texto.contains(categoria)) {
+            if (coincideConCategoria(texto, categoria)) {
 
                 busqueda.setCategoria(categoria);
                 break;

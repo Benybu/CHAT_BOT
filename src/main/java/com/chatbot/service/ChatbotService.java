@@ -22,6 +22,14 @@ public class ChatbotService {
         private String ultimaMarca = "";
         private String ultimaMedida = "";
         private String ultimoContexto = "";
+        /*
+        GUARDA EL PRODUCTO REALMENTE USADO
+        PARA GENERAR LA ULTIMA RESPUESTA DE TEXTO,
+        ASI procesarMensajeApi() NO VUELVE A BUSCAR
+        POR SU CUENTA Y DESINCRONIZAR nombre/imagen/precio
+        CON EL TEXTO DE LA RESPUESTA.
+        */
+        private Producto ultimoProductoEncontrado = null;
         private final ProductoDAO productoDAO = new ProductoDAO();
         private final RespuestaDAO respuestaDAO = new RespuestaDAO();
         private final MensajeDAO mensajeDAO = new MensajeDAO();
@@ -361,6 +369,13 @@ private String aplicarPersonalidad(String mensaje) {
             return "Escribe un mensaje.";
         }
 
+        /*
+        LIMPIA EL PRODUCTO DE LA LLAMADA ANTERIOR
+        PARA NO ARRASTRAR UN RESULTADO VIEJO
+        SI ESTA VEZ NO SE ENCUENTRA NADA
+        */
+        ultimoProductoEncontrado = null;
+
         String texto = mensaje.toLowerCase();
 
         /*
@@ -534,6 +549,8 @@ private String aplicarPersonalidad(String mensaje) {
                         alternativo.getDescripcion()
                 );
 
+                ultimoProductoEncontrado = alternativo;
+
                 return aplicarPersonalidad(respuesta);
                 }
         }
@@ -555,6 +572,8 @@ private String aplicarPersonalidad(String mensaje) {
          SI ENCUENTRA PRODUCTO
         */
         if (producto != null) {
+
+            ultimoProductoEncontrado = producto;
 
             String respuesta;
 
@@ -1127,40 +1146,22 @@ private String aplicarPersonalidad(String mensaje) {
                 String respuesta = 
                         procesarMensaje(mensaje); 
                 chat.setRespuesta(respuesta); 
-                Producto producto = 
-                        productoDAO.buscarCoincidencia(texto);
+
+                /*
+                USA EL MISMO PRODUCTO QUE procesarMensaje()
+                YA ENCONTRÓ Y USÓ PARA ARMAR "respuesta".
+                NO SE VUELVE A BUSCAR CON OTRO TEXTO, PARA
+                QUE nombre/imagen/precio SIEMPRE COINCIDAN
+                CON LO QUE DICE EL MENSAJE.
+                */
+                Producto producto = ultimoProductoEncontrado;
+
                 if (producto != null) {
+
                 ultimoContexto =
                         producto.getNombre() + " " +
                         producto.getCategoria() + " " +
                         producto.getMarca();
-                }
-                if (producto != null) { 
-                        respuesta =
-                        """
-                        🎮 Excelente opción 🚀
-
-                        Tenemos disponible este producto 👇
-
-                        🛒 %s
-
-                        💰 Precio: S/ %s
-
-                        📦 Stock: %d unidades
-
-                        📄 Descripción:
-                        %s
-
-                        🔥 Aprovecha antes que se agote.
-                        """
-                        .formatted(
-                                producto.getNombre(),
-                                producto.getPrecio(),
-                                producto.getStock(),
-                                producto.getDescripcion()
-                        );
-
-                chat.setRespuesta(respuesta);
 
                 chat.setNombreProducto(
                         producto.getNombre()
@@ -1173,8 +1174,12 @@ private String aplicarPersonalidad(String mensaje) {
                 chat.setPrecio(
                         producto.getPrecio().toString()
                 );
-                }
+
+                } else {
+
                 ultimoContexto = texto;
+
+                }
                 
                 return chat;
         }
