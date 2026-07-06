@@ -133,6 +133,14 @@ public class ChatbotService {
         DEVUELVE TODAS LAS MARCAS DISTINTAS (EN MINUSCULA)
         QUE EXISTEN REALMENTE EN EL CATALOGO DE PRODUCTOS, EN
         VEZ DE UNA LISTA FIJA E INCOMPLETA.
+
+        SE EXCLUYE CUALQUIER PRODUCTO CUYO CAMPO "marca" SEA
+        IGUAL A SU PROPIO "categoria" (ej. SILLAS CARGADAS CON
+        marca="Silla", categoria="Silla"). ESO ES UN DATO MAL
+        CARGADO, NO UNA MARCA REAL, Y SI SE INCLUYERA, CUALQUIER
+        MENSAJE QUE MENCIONE ESA CATEGORIA SE INTERPRETARIA
+        TAMBIEN COMO SI PIDIERA ESA "MARCA", ARRASTRANDOLA DE
+        TURNO EN TURNO IGUAL QUE UNA MARCA REAL.
         */
         private java.util.Set<String> marcasDelCatalogo() {
 
@@ -144,7 +152,16 @@ public class ChatbotService {
                         p.getMarca() != null &&
                         !p.getMarca().isBlank()
                 ) {
-                marcas.add(p.getMarca().toLowerCase());
+
+                boolean marcaEsIgualASuCategoria =
+                        p.getCategoria() != null &&
+                        p.getMarca().trim().equalsIgnoreCase(
+                                p.getCategoria().trim()
+                        );
+
+                if (!marcaEsIgualASuCategoria) {
+                        marcas.add(p.getMarca().toLowerCase());
+                }
                 }
         }
 
@@ -1424,6 +1441,24 @@ private String aplicarPersonalidad(String mensaje) {
                                 p.getMarca().toLowerCase();
 
                         if (marca.isBlank()) {
+                                continue;
+                        }
+
+                        /*
+                        IGNORAR PRODUCTOS CUYA "marca" ES EN
+                        REALIDAD UN DATO MAL CARGADO IGUAL A SU
+                        PROPIA CATEGORIA (ej. SILLAS CON
+                        marca="Silla", categoria="Silla"). SI NO,
+                        CUALQUIER MENSAJE QUE MENCIONE ESA
+                        CATEGORIA SE INTERPRETA TAMBIEN COMO SI
+                        PIDIERA ESA "MARCA".
+                        */
+                        if (
+                                p.getCategoria() != null &&
+                                marca.equalsIgnoreCase(
+                                        p.getCategoria().trim().toLowerCase()
+                                )
+                        ) {
                                 continue;
                         }
 

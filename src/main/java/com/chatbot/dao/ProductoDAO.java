@@ -152,7 +152,35 @@ public class ProductoDAO {
 
             catalogo.agregarCategoria(p.getCategoria());
 
-            catalogo.agregarMarca(p.getMarca());
+            /*
+            ALGUNOS PRODUCTOS (ej. SILLAS) TIENEN EL CAMPO
+            "marca" CARGADO CON EL MISMO VALOR QUE SU PROPIA
+            CATEGORIA (marca="Silla", categoria="Silla"), EN
+            VEZ DE UNA MARCA REAL O VACIO. SI ESO SE AGREGA AL
+            CATALOGO DE MARCAS, LA PALABRA "silla" SE TRATA
+            COMO SI FUERA UNA MARCA VALIDA: CUALQUIER MENSAJE
+            QUE MENCIONE LA CATEGORIA ("quiero una silla...")
+            TERMINA FILTRANDO TAMBIEN POR "marca = silla" Y
+            DESCARTA DE ENTRADA CUALQUIER PRODUCTO DE ESA
+            CATEGORIA QUE NO TENGA ESE MISMO DATO MAL CARGADO,
+            ANTES DE SIQUIERA CONSIDERAR LO QUE EL CLIENTE
+            REALMENTE PIDIO (ej. "gamer", "verde").
+
+            POR ESO, SI marca Y categoria SON IGUALES (SIN
+            IMPORTAR MAYUSCULAS/ESPACIOS), NO SE REGISTRA
+            COMO MARCA VALIDA PARA BUSQUEDA.
+            */
+            String marca = p.getMarca();
+            String categoriaProducto = p.getCategoria();
+
+            boolean marcaEsIgualASuCategoria =
+                    marca != null &&
+                    categoriaProducto != null &&
+                    marca.trim().equalsIgnoreCase(categoriaProducto.trim());
+
+            if (!marcaEsIgualASuCategoria) {
+                catalogo.agregarMarca(marca);
+            }
 
             catalogo.agregarModelo(p.getModelo());
 
