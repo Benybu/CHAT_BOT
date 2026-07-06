@@ -166,19 +166,45 @@ public class ProductoDAO {
             ANTES DE SIQUIERA CONSIDERAR LO QUE EL CLIENTE
             REALMENTE PIDIO (ej. "gamer", "verde").
 
-            POR ESO, SI marca Y categoria SON IGUALES (SIN
-            IMPORTAR MAYUSCULAS/ESPACIOS), NO SE REGISTRA
-            COMO MARCA VALIDA PARA BUSQUEDA.
+            ANTES: SOLO SE EXCLUIA CUANDO marca Y categoria ERAN
+            IDENTICAS COMO CADENA COMPLETA (ej. "Silla" == "Silla").
+            ESO NO CUBRIA EL CASO REAL DETECTADO EN PRODUCCION:
+            FILAS CON categoria="Silla Gamer" (MAS ESPECIFICA) Y
+            marca="Silla" (EL MISMO DATO MAL CARGADO, PERO SOLO
+            LA PALABRA BASE). COMO "silla" != "silla gamer", LA
+            MARCA CORRUPTA SE SEGUIA REGISTRANDO COMO VALIDA Y
+            ARRASTRABA EL MISMO BUG: BUSQUEDAS DE "silla gamer"
+            TERMINABAN FILTRANDO SOLO LOS PRODUCTOS CON ESE DATO
+            MAL CARGADO Y DESCARTANDO LAS SILLAS GAMER REALES.
+
+            AHORA: TAMBIEN SE EXCLUYE SI marca COINCIDE CON
+            CUALQUIERA DE LAS PALABRAS QUE COMPONEN LA categoria
+            DE ESA MISMA FILA (ej. "silla" ES UNA PALABRA DE
+            "silla gamer"), NO SOLO CUANDO SON IDENTICAS.
             */
             String marca = p.getMarca();
             String categoriaProducto = p.getCategoria();
 
-            boolean marcaEsIgualASuCategoria =
-                    marca != null &&
-                    categoriaProducto != null &&
-                    marca.trim().equalsIgnoreCase(categoriaProducto.trim());
+            boolean marcaEsPalabraDeSuCategoria = false;
 
-            if (!marcaEsIgualASuCategoria) {
+            if (marca != null && categoriaProducto != null) {
+
+                String marcaNormalizada =
+                        marca.trim().toLowerCase();
+
+                for (String palabraCategoria :
+                        categoriaProducto.trim().toLowerCase().split("\\s+")) {
+
+                    if (marcaNormalizada.equals(palabraCategoria)) {
+                        marcaEsPalabraDeSuCategoria = true;
+                        break;
+                    }
+
+                }
+
+            }
+
+            if (!marcaEsPalabraDeSuCategoria) {
                 catalogo.agregarMarca(marca);
             }
 
