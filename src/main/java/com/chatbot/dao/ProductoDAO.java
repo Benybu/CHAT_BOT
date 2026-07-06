@@ -201,13 +201,13 @@ public class ProductoDAO {
                 continue;
             }
 
-            if (texto.contains(palabra)) {
+            if (contienePalabra(texto, palabra)) {
                 return true;
             }
 
             String singular = quitarPlural(palabra);
 
-            if (!singular.equals(palabra) && texto.contains(singular)) {
+            if (!singular.equals(palabra) && contienePalabra(texto, singular)) {
                 return true;
             }
 
@@ -515,6 +515,30 @@ public class ProductoDAO {
         return n.toLowerCase().trim();
     }
 
+    /*
+    COMPARA SI "palabra" APARECE COMPLETA DENTRO DE "texto",
+    NO COMO FRAGMENTO DE OTRA PALABRA.
+    EJEMPLO DE BUG QUE ESTO EVITA: LA MARCA "LG" NO DEBE
+    "ENCONTRARSE" DENTRO DE LA PALABRA "PULGADAS".
+    */
+    private boolean contienePalabra(String texto, String palabra) {
+
+        if (palabra == null || palabra.isBlank()) {
+            return false;
+        }
+
+        String regex =
+                "\\b" +
+                java.util.regex.Pattern.quote(palabra) +
+                "\\b";
+
+        return java.util.regex.Pattern
+                .compile(regex)
+                .matcher(texto)
+                .find();
+
+    }
+
     private Busqueda analizarMensaje(String mensaje) {
 
         Busqueda busqueda = new Busqueda();
@@ -528,7 +552,7 @@ public class ProductoDAO {
         // ----------------------------
         for (String marca : catalogo.getMarcas()) {
 
-            if (texto.contains(marca)) {
+            if (contienePalabra(texto, marca)) {
 
                 busqueda.setMarca(marca);
                 break;
@@ -556,7 +580,7 @@ public class ProductoDAO {
         // ----------------------------
         for (String modelo : catalogo.getModelos()) {
 
-            if (texto.contains(modelo)) {
+            if (contienePalabra(texto, modelo)) {
 
                 busqueda.setModelo(modelo);
                 break;
