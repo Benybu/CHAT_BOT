@@ -942,6 +942,34 @@ private String aplicarPersonalidad(String mensaje) {
         );
 
             /*
+             AVISO HONESTO DE COLOR
+             SI EL CLIENTE PIDIO UN COLOR ESPECIFICO (ej. "verde")
+             Y EL PRODUCTO ENCONTRADO NO LO TIENE EN SU NOMBRE
+             (NO HAY CAMPO "color" PROPIO, SE INFIERE DEL NOMBRE),
+             SE ACLARA EN VEZ DE MOSTRARLO CALLADAMENTE COMO SI
+             FUERA UNA COINCIDENCIA EXACTA DE COLOR.
+            */
+            String colorSolicitado =
+                    productoDAO.detectarColorEnTexto(texto);
+
+            if (
+                    colorSolicitado != null &&
+                    !productoDAO.nombreContieneColor(
+                            producto.getNombre(),
+                            colorSolicitado
+                    )
+            ) {
+
+                respuesta += """
+
+
+                🎨 Por cierto, este modelo no lo tenemos en %s,\
+                el color disponible es el que ves arriba.
+                """.formatted(colorSolicitado);
+
+            }
+
+            /*
              GUARDA MENSAJE
             */
             mensajeDAO.guardar(

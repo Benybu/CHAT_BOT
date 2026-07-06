@@ -9,6 +9,7 @@ public class Busqueda {
     private String marcaExcluida;
     private String modelo;
     private String medida;
+    private String color;
     private List<String> atributos = new ArrayList<>();
 
     private boolean barato;
@@ -59,6 +60,23 @@ public class Busqueda {
 
     public void setMedida(String medida) {
         this.medida = medida;
+    }
+
+    /*
+    COLOR PEDIDO POR EL CLIENTE (ej. "verde", "negro").
+    A DIFERENCIA DE categoria/marca/modelo, EL COLOR NO ES
+    UN CAMPO PROPIO EN LA TABLA DE PRODUCTOS: VIENE MEZCLADO
+    COMO TEXTO LIBRE DENTRO DEL NOMBRE DEL PRODUCTO (ej.
+    "TITAN COLOR NEGRO - NEGRO M-CUERINA"). POR ESO SE
+    FILTRA/PUNTUA BUSCANDO ESA PALABRA DENTRO DEL NOMBRE,
+    EN VEZ DE COMPARAR UN CAMPO ESTRUCTURADO.
+    */
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
     }
 
     public boolean isBarato() {

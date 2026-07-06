@@ -144,6 +144,69 @@ public class ProductoDAO {
         return lista;
     }
 
+    /*
+    COLORES CONOCIDOS. NO HAY UN CAMPO "color" EN LA TABLA
+    DE PRODUCTOS: EL COLOR VIENE COMO TEXTO LIBRE DENTRO DEL
+    NOMBRE (ej. "TITAN COLOR NEGRO - NEGRO M-CUERINA"). ESTA
+    LISTA SE USA PARA DETECTAR QUE COLOR PIDE EL CLIENTE Y
+    PARA VERIFICAR SI EL PRODUCTO ENCONTRADO REALMENTE LO
+    TIENE, EN VEZ DE TRATAR EL COLOR COMO UNA PALABRA MAS
+    QUE SOLO SUMA PUNTOS SIN FILTRAR NADA.
+    */
+    private static final String[] COLORES = {
+        "negro", "blanco", "gris", "plomo",
+        "rojo", "azul", "celeste", "verde",
+        "amarillo", "naranja", "morado", "violeta",
+        "rosado", "rosa", "marron", "café", "cafe",
+        "dorado", "plateado", "beige"
+    };
+
+    /*
+    DEVUELVE EL COLOR QUE EL CLIENTE MENCIONA EN EL TEXTO
+    (EL MENCIONADO MAS AL FINAL, IGUAL QUE CATEGORIA/MARCA),
+    O null SI NO MENCIONA NINGUNO.
+    */
+    private String detectarColor(String texto) {
+
+        String mejorColor = null;
+        int mejorPosicion = -1;
+
+        for (String color : COLORES) {
+
+            int posicion = posicionUltimaCoincidencia(texto, color);
+
+            if (posicion > mejorPosicion) {
+                mejorPosicion = posicion;
+                mejorColor = color;
+            }
+
+        }
+
+        return mejorColor;
+
+    }
+
+    /*
+    EXPUESTO PARA QUE ChatbotService PUEDA AVISAR AL CLIENTE
+    CUANDO EL COLOR QUE PIDIO NO ES EL DEL PRODUCTO QUE SE
+    LE VA A MOSTRAR (ej. PIDIO "verde" Y SOLO HAY "negro"),
+    EN VEZ DE MOSTRARLO CALLADAMENTE COMO SI FUERA UNA
+    COINCIDENCIA EXACTA.
+    */
+    public String detectarColorEnTexto(String mensaje) {
+        return detectarColor(normalizar(mensaje));
+    }
+
+    public boolean nombreContieneColor(String nombre, String color) {
+
+        if (nombre == null || color == null) {
+            return false;
+        }
+
+        return contienePalabra(normalizar(nombre), normalizar(color));
+
+    }
+
     private void construirCatalogo() {
 
         catalogo = new CatalogoBusqueda();
@@ -563,6 +626,7 @@ public class ProductoDAO {
         System.out.println("Marca detectada: " + busqueda.getMarca());
         System.out.println("Modelo detectado: " + busqueda.getModelo());
         System.out.println("Medida detectada: " + busqueda.getMedida());
+        System.out.println("Color detectado: " + busqueda.getColor());
         System.out.println("Atributos detectados: " + busqueda.getAtributos());
         System.out.println("============================");
 
@@ -618,6 +682,9 @@ public class ProductoDAO {
 
         productos = filtrarAtributos(productos, busqueda);
         System.out.println("Despues de atributos: " + productos.size());
+
+        productos = filtrarColor(productos, busqueda);
+        System.out.println("Despues de color: " + productos.size());
 
         productos = filtrarPorIndice(
                 productos,
@@ -758,6 +825,11 @@ public class ProductoDAO {
             }
 
         }
+
+        // ----------------------------
+        // Detectar color
+        // ----------------------------
+        busqueda.setColor(detectarColor(texto));
 
         // ----------------------------
         // Detectar modelo
@@ -1149,6 +1221,42 @@ public class ProductoDAO {
 
     }
 
+    /*
+    A DIFERENCIA DE LOS OTROS FILTROS, EL COLOR NO DESCARTA
+    TODO CUANDO NO HAY COINCIDENCIA. SI EL CLIENTE PIDE
+    "verde" Y NINGUN PRODUCTO DE LOS QUE QUEDAN LO TIENE,
+    SE MANTIENE LA LISTA ORIGINAL (PARA SEGUIR OFRECIENDO
+    LA MEJOR OPCION DISPONIBLE EN OTRO COLOR) EN VEZ DE
+    DEVOLVER CERO RESULTADOS. LA HONESTIDAD SOBRE EL COLOR
+    NO DISPONIBLE SE MANEJA APARTE, EN ChatbotService, USANDO
+    detectarColorEnTexto/nombreContieneColor.
+    */
+    private List<Producto> filtrarColor(
+            List<Producto> productos,
+            Busqueda busqueda) {
+
+        if (busqueda.getColor() == null) {
+            return productos;
+        }
+
+        List<Producto> conColor = new ArrayList<>();
+
+        for (Producto p : productos) {
+
+            if (nombreContieneColor(p.getNombre(), busqueda.getColor())) {
+                conColor.add(p);
+            }
+
+        }
+
+        if (conColor.isEmpty()) {
+            return productos;
+        }
+
+        return conColor;
+
+    }
+
     private List<Producto> filtrarModelo(
             List<Producto> productos,
             Busqueda busqueda) {
@@ -1235,6 +1343,16 @@ public class ProductoDAO {
                 categoria.contains(busqueda.getCategoria())) {
 
             score += 120;
+
+        }
+
+        // ==========================
+        // COLOR
+        // ==========================
+        if (busqueda.getColor() != null &&
+                nombreContieneColor(p.getNombre(), busqueda.getColor())) {
+
+            score += 150;
 
         }
 
