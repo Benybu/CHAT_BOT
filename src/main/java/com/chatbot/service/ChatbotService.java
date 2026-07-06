@@ -1185,6 +1185,40 @@ private String aplicarPersonalidad(String mensaje) {
 
         public RespuestaChat procesarMensajeApi(String mensaje) { 
                 String texto = mensaje.toLowerCase();
+
+                /*
+                SI EL CLIENTE MENCIONA EXPLICITAMENTE UNA MARCA
+                DISTINTA A LA ULTIMA RECORDADA (ej. veniamos hablando
+                de "halion" y ahora pide "msi"), SIGNIFICA QUE QUIERE
+                UN PRODUCTO DISTINTO. EN ESE CASO NO SE DEBE ARRASTRAR
+                EL ultimoContexto DEL PRODUCTO ANTERIOR, PORQUE ESTE
+                INCLUYE EL NOMBRE/MODELO EXACTO DE ESE PRODUCTO (ej.
+                "HS2703FC") Y ESO HACIA QUE LA BUSQUEDA SIGUIERA
+                FILTRANDO POR ESE MODELO VIEJO AUNQUE LA MARCA HAYA
+                CAMBIADO, DEVOLVIENDO SIEMPRE "NO ENCONTRO PRODUCTO".
+                */
+                int mejorPosicionMarcaNueva = -1;
+                String marcaMencionada = null;
+
+                for (String marca : marcasDelCatalogo()) {
+
+                        int posicion = ultimaPosicion(texto, marca);
+
+                        if (posicion > mejorPosicionMarcaNueva) {
+                                mejorPosicionMarcaNueva = posicion;
+                                marcaMencionada = marca;
+                        }
+                }
+
+                if (
+                        marcaMencionada != null &&
+                        !ultimaMarca.isBlank() &&
+                        !marcaMencionada.equals(ultimaMarca)
+                ) {
+
+                ultimoContexto = "";
+                }
+
                 /*
                 SI EL MENSAJE ES CORTO
                 O INCOMPLETO,
