@@ -98,6 +98,77 @@ public class ChatbotService {
         return null;
         }
 
+        /*
+        DEVUELVE TODAS LAS CATEGORIAS DISTINTAS (EN MINUSCULA)
+        QUE EXISTEN REALMENTE EN EL CATALOGO DE PRODUCTOS, EN
+        VEZ DE UNA LISTA FIJA E INCOMPLETA.
+        */
+        private java.util.Set<String> categoriasDelCatalogo() {
+
+        java.util.Set<String> categorias = new java.util.HashSet<>();
+
+        for (Producto p : ProductoCache.obtenerProductos()) {
+
+                if (
+                        p.getCategoria() != null &&
+                        !p.getCategoria().isBlank()
+                ) {
+                categorias.add(p.getCategoria().toLowerCase());
+                }
+        }
+
+        return categorias;
+        }
+
+        /*
+        DEVUELVE TODAS LAS MARCAS DISTINTAS (EN MINUSCULA)
+        QUE EXISTEN REALMENTE EN EL CATALOGO DE PRODUCTOS, EN
+        VEZ DE UNA LISTA FIJA E INCOMPLETA.
+        */
+        private java.util.Set<String> marcasDelCatalogo() {
+
+        java.util.Set<String> marcas = new java.util.HashSet<>();
+
+        for (Producto p : ProductoCache.obtenerProductos()) {
+
+                if (
+                        p.getMarca() != null &&
+                        !p.getMarca().isBlank()
+                ) {
+                marcas.add(p.getMarca().toLowerCase());
+                }
+        }
+
+        return marcas;
+        }
+
+        /*
+        DEVUELVE LA POSICION DONDE EMPIEZA LA ULTIMA APARICION
+        DE "palabra" COMO PALABRA COMPLETA DENTRO DE "texto",
+        O -1 SI NO APARECE. SIRVE PARA PREFERIR LA MARCA/CATEGORIA
+        MENCIONADA MAS RECIENTEMENTE CUANDO HAY VARIAS PRESENTES
+        (ej. UNA ARRASTRADA DEL CONTEXTO ANTERIOR Y OTRA NUEVA).
+        */
+        private int ultimaPosicion(String texto, String palabra) {
+
+        if (palabra == null || palabra.isBlank()) {
+                return -1;
+        }
+
+        java.util.regex.Matcher matcher =
+                java.util.regex.Pattern
+                        .compile("\\b" + java.util.regex.Pattern.quote(palabra) + "\\b")
+                        .matcher(texto);
+
+        int ultima = -1;
+
+        while (matcher.find()) {
+                ultima = matcher.start();
+        }
+
+        return ultima;
+        }
+
     private String saludoAleatorio() {
 
         String[] saludos = {
@@ -410,36 +481,54 @@ private String aplicarPersonalidad(String mensaje) {
 
         /*
         GUARDAR CATEGORIAS
+
+        ANTES: SOLO SE RECONOCIAN 4 CATEGORIAS FIJAS
+        ("monitor", "mouse", "teclado", "laptop"). CUALQUIER
+        OTRA CATEGORIA DEL CATALOGO (silla, audifono, parlante,
+        etc.) NUNCA ACTUALIZABA ultimaCategoria, DEJANDO UN
+        VALOR VIEJO/INCORRECTO ARRASTRADO DE TURNOS ANTERIORES.
+
+        AHORA: SE COMPARA CONTRA TODAS LAS CATEGORIAS REALES
+        DEL CATALOGO Y, SI HAY VARIAS PRESENTES, SE PREFIERE
+        LA QUE APARECE MAS AL FINAL (LA MAS RECIENTE).
         */
-        if (texto.contains("monitor")) {
-        ultimaCategoria = "monitor";
-        }
+        int posCategoria = -1;
 
-        if (texto.contains("mouse")) {
-        ultimaCategoria = "mouse";
-        }
+        for (String categoria : categoriasDelCatalogo()) {
 
-        if (texto.contains("teclado")) {
-        ultimaCategoria = "teclado";
-        }
+                int pos = ultimaPosicion(texto, categoria);
 
-        if (texto.contains("laptop")) {
-        ultimaCategoria = "laptop";
+                if (pos > posCategoria) {
+                        posCategoria = pos;
+                        ultimaCategoria = categoria;
+                }
         }
 
         /*
         GUARDAR MARCAS
+
+        ANTES: SOLO SE RECONOCIAN 3 MARCAS FIJAS
+        ("msi", "asus", "teros"). CUALQUIER OTRA MARCA DEL
+        CATALOGO (halion, lg, samsung, etc.) NUNCA ACTUALIZABA
+        ultimaMarca, POR LO QUE UNA MARCA VIEJA ARRASTRADA DE
+        UN TURNO ANTERIOR SEGUIA APLICANDOSE AUNQUE EL CLIENTE
+        HUBIERA PEDIDO OTRA MARCA DISTINTA.
+
+        AHORA: SE COMPARA CONTRA TODAS LAS MARCAS REALES DEL
+        CATALOGO Y, SI HAY VARIAS PRESENTES (ej. LA MARCA VIEJA
+        ARRASTRADA POR CONTEXTO Y LA NUEVA QUE EL CLIENTE ACABA
+        DE ESCRIBIR), SE PREFIERE LA QUE APARECE MAS AL FINAL.
         */
-        if (texto.contains("msi")) {
-        ultimaMarca = "msi";
-        }
+        int posMarca = -1;
 
-        if (texto.contains("asus")) {
-        ultimaMarca = "asus";
-        }
+        for (String marca : marcasDelCatalogo()) {
 
-        if (texto.contains("teros")) {
-        ultimaMarca = "teros";
+                int pos = ultimaPosicion(texto, marca);
+
+                if (pos > posMarca) {
+                        posMarca = pos;
+                        ultimaMarca = marca;
+                }
         }
 
         /*
@@ -456,17 +545,30 @@ private String aplicarPersonalidad(String mensaje) {
 
         /*
         COMPLETAR CONTEXTO
+
+        ANTES: SE COMPARABA CONTRA LOS LITERALES FIJOS
+        "monitor" Y "msi", SIN IMPORTAR CUAL ERA LA
+        CATEGORIA/MARCA REALMENTE DETECTADA (ultimaCategoria/
+        ultimaMarca). ESO PROVOCABA QUE, POR EJEMPLO, SI EL
+        CLIENTE PREGUNTABA POR UNA MARCA DISTINTA A "msi"
+        (ej. "teros"), SIEMPRE SE VOLVIERA A AGREGAR LA MARCA
+        ANTERIOR AL TEXTO, INCLUSO SI YA ESTABA CORRECTA,
+        Y EN COMBINACION CON EL CONTEXTO PREVIO PODIA TERMINAR
+        PRIORIZANDO LA MARCA VIEJA EN LUGAR DE LA NUEVA.
+
+        AHORA: SOLO SE COMPLETA CON EL CONTEXTO ANTERIOR SI
+        EL TEXTO ACTUAL NO MENCIONA YA ESA MISMA CATEGORIA/MARCA.
         */
         if (
-                !texto.contains("monitor") &&
-                !ultimaCategoria.isBlank()
+                !ultimaCategoria.isBlank() &&
+                !texto.contains(ultimaCategoria)
         ) {
         texto += " " + ultimaCategoria;
         }
 
         if (
-                !texto.contains("msi") &&
-                !ultimaMarca.isBlank()
+                !ultimaMarca.isBlank() &&
+                !texto.contains(ultimaMarca)
         ) {
         texto += " " + ultimaMarca;
         }
@@ -1137,6 +1239,20 @@ private String aplicarPersonalidad(String mensaje) {
                 texto =
                         ultimoContexto + " " + texto;
                 }
+                /*
+                ANTES: SE TOMABA LA PRIMERA MARCA QUE HACIA MATCH
+                SEGUN EL ORDEN DE productoDAO.listarActivos(), SIN
+                CONSIDERAR QUE "texto" YA TRAE MEZCLADO EL CONTEXTO
+                ANTERIOR (ej. LA MARCA DEL PRODUCTO YA MOSTRADO)
+                JUNTO CON LO QUE EL CLIENTE ACABA DE ESCRIBIR. ESO
+                PODIA HACER QUE SE ELIGIERA LA MARCA VIEJA EN VEZ
+                DE LA NUEVA.
+
+                AHORA: SE ELIGE LA MARCA QUE APARECE MAS AL FINAL
+                DEL TEXTO (LA MENCIONADA MAS RECIENTEMENTE).
+                */
+                int mejorPosicionMarcaApi = -1;
+
                 for (Producto p : productoDAO.listarActivos()) {
 
                         if (p.getMarca() == null) {
@@ -1146,24 +1262,16 @@ private String aplicarPersonalidad(String mensaje) {
                         String marca =
                                 p.getMarca().toLowerCase();
 
-                        /*
-                        SE USA \b (LIMITE DE PALABRA) EN VEZ DE
-                        contains() PLANO, PARA EVITAR FALSOS POSITIVOS
-                        COMO LA MARCA "LG" APARECIENDO DENTRO DE
-                        LA PALABRA "PULGADAS".
-                        */
-                        boolean coincide =
-                                !marca.isBlank() &&
-                                java.util.regex.Pattern
-                                        .compile("\\b" + java.util.regex.Pattern.quote(marca) + "\\b")
-                                        .matcher(texto)
-                                        .find();
+                        if (marca.isBlank()) {
+                                continue;
+                        }
 
-                        if (coincide) {
+                        int posicion = ultimaPosicion(texto, marca);
 
+                        if (posicion > mejorPosicionMarcaApi) {
+
+                                mejorPosicionMarcaApi = posicion;
                                 ultimaMarca = marca;
-
-                                break;
                         }
                 }
 
