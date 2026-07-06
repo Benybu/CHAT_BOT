@@ -741,41 +741,79 @@ public class ProductoDAO {
         // ----------------------------
         // Detectar atributos
         // ----------------------------
+        /*
+        ANTES: SE AGREGABA CUALQUIER ATRIBUTO QUE APARECIERA EN
+        EL TEXTO, SIN IMPORTAR QUE ALGUNOS SON MUTUAMENTE
+        EXCLUYENTES (UN MONITOR NO PUEDE SER "144HZ" Y "240HZ"
+        A LA VEZ). COMO "texto" TRAE MEZCLADO EL NOMBRE COMPLETO
+        DEL PRODUCTO ANTERIOR (CON SUS SPECS VIEJAS) JUNTO CON EL
+        MENSAJE NUEVO DEL CLIENTE, SI EL CLIENTE PEDIA UNA
+        CARACTERISTICA DISTINTA (ej. PASAR DE 144HZ A 240HZ), SE
+        TERMINABA BUSCANDO UN PRODUCTO QUE CUMPLIERA AMBOS
+        VALORES A LA VEZ, ALGO QUE NUNCA EXISTE, Y SIEMPRE
+        RESPONDIA "NO ENCONTRO PRODUCTO".
 
-        String[] atributosDetectables = {
+        AHORA: LOS ATRIBUTOS QUE PERTENECEN AL MISMO GRUPO
+        (PANEL, RESOLUCION, TASA DE REFRESCO, FORMA) SE TRATAN
+        COMO EXCLUYENTES ENTRE SI, Y SOLO SE CONSERVA EL QUE
+        APARECE MAS AL FINAL DEL TEXTO (EL MAS RECIENTE), IGUAL
+        QUE YA SE HACE CON CATEGORIA Y MARCA.
+        */
 
-            "ips",
-            "va",
-            "tn",
-            "oled",
+        String[][] gruposAtributosExcluyentes = {
 
-            "fhd",
-            "qhd",
-            "uhd",
-            "4k",
+            { "ips", "va", "tn", "oled" },
 
-            "75hz",
-            "100hz",
-            "120hz",
-            "144hz",
-            "165hz",
-            "170hz",
-            "180hz",
-            "240hz",
-            "360hz",
+            { "fhd", "qhd", "uhd", "4k" },
+
+            {
+                "75hz", "100hz", "120hz", "144hz",
+                "165hz", "170hz", "180hz", "240hz", "360hz"
+            },
+
+            { "curvo", "plano" }
+
+        };
+
+        for (String[] grupo : gruposAtributosExcluyentes) {
+
+            String mejorAtributo = null;
+            int mejorPosicionAtributo = -1;
+
+            for (String atributo : grupo) {
+
+                int posicion = posicionUltimaCoincidencia(texto, atributo);
+
+                if (posicion > mejorPosicionAtributo) {
+                    mejorPosicionAtributo = posicion;
+                    mejorAtributo = atributo;
+                }
+
+            }
+
+            if (mejorAtributo != null) {
+                busqueda.agregarAtributo(mejorAtributo);
+            }
+
+        }
+
+        /*
+        ESTOS ATRIBUTOS SI PUEDEN COEXISTIR EN UN MISMO
+        PRODUCTO (UN MONITOR PUEDE TENER HDMI Y DISPLAYPORT A
+        LA VEZ), ASI QUE SE SIGUEN ACUMULANDO TODOS LOS QUE
+        APAREZCAN EN EL TEXTO.
+        */
+        String[] atributosNoExcluyentes = {
 
             "hdmi",
             "displayport",
             "dp",
             "usb-c",
-            "usbc",
-
-            "curvo",
-            "plano"
+            "usbc"
 
         };
 
-        for (String atributo : atributosDetectables) {
+        for (String atributo : atributosNoExcluyentes) {
 
             if (texto.contains(atributo)) {
 
