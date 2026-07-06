@@ -182,6 +182,8 @@ public class ProductoDAO {
 
         String[] stopwords = {"de", "del", "la", "el", "los", "las", "para", "pc", "y"};
 
+        boolean tieneAlMenosUnaPalabraSignificativa = false;
+
         for (String palabra : categoria.split("\\s+")) {
 
             if (palabra.length() <= 2) {
@@ -201,19 +203,39 @@ public class ProductoDAO {
                 continue;
             }
 
-            if (contienePalabra(texto, palabra)) {
-                return true;
+            tieneAlMenosUnaPalabraSignificativa = true;
+
+            boolean encontrada =
+                    contienePalabra(texto, palabra);
+
+            if (!encontrada) {
+
+                String singular = quitarPlural(palabra);
+
+                if (!singular.equals(palabra)) {
+                    encontrada = contienePalabra(texto, singular);
+                }
             }
 
-            String singular = quitarPlural(palabra);
+            /*
+            ANTES: BASTABA CON QUE UNA SOLA PALABRA DE UNA
+            CATEGORIA COMPUESTA (ej. "silla gamer") APARECIERA
+            EN EL TEXTO PARA QUE TODA LA CATEGORIA SE DIERA
+            POR VALIDA. ESO HACIA QUE, POR EJEMPLO, LA PALABRA
+            "gamer" (presente en casi cualquier mensaje sobre
+            monitores gamer) HICIERA MATCH CON LA CATEGORIA
+            "silla gamer" AUNQUE EL CLIENTE NUNCA MENCIONO "silla".
 
-            if (!singular.equals(palabra) && contienePalabra(texto, singular)) {
-                return true;
+            AHORA: TODAS LAS PALABRAS SIGNIFICATIVAS DE LA
+            CATEGORIA DEBEN ESTAR PRESENTES (AND EN VEZ DE OR).
+            */
+            if (!encontrada) {
+                return false;
             }
 
         }
 
-        return false;
+        return tieneAlMenosUnaPalabraSignificativa;
 
     }
 
@@ -556,6 +578,39 @@ public class ProductoDAO {
 
     }
 
+    /*
+    DEVUELVE LA POSICION DONDE EMPIEZA LA ULTIMA APARICION
+    DE "palabra" COMO PALABRA COMPLETA DENTRO DE "texto",
+    O -1 SI NO APARECE. SIRVE PARA SABER CUAL DE VARIAS
+    MARCAS/CATEGORIAS PRESENTES EN EL TEXTO FUE MENCIONADA
+    MAS RECIENTEMENTE POR EL CLIENTE.
+    */
+    private int posicionUltimaCoincidencia(String texto, String palabra) {
+
+        if (palabra == null || palabra.isBlank()) {
+            return -1;
+        }
+
+        String regex =
+                "\\b" +
+                java.util.regex.Pattern.quote(palabra) +
+                "\\b";
+
+        java.util.regex.Matcher matcher =
+                java.util.regex.Pattern
+                        .compile(regex)
+                        .matcher(texto);
+
+        int ultimaPosicion = -1;
+
+        while (matcher.find()) {
+            ultimaPosicion = matcher.start();
+        }
+
+        return ultimaPosicion;
+
+    }
+
     private Busqueda analizarMensaje(String mensaje) {
 
         Busqueda busqueda = new Busqueda();
@@ -567,12 +622,29 @@ public class ProductoDAO {
         // ----------------------------
         // Detectar marca
         // ----------------------------
+        /*
+        ANTES: SE TOMABA LA PRIMERA MARCA QUE HICIERA MATCH
+        SEGUN EL ORDEN DE catalogo.getMarcas(), QUE ES UN
+        HashSet SIN ORDEN GARANTIZADO. COMO EL TEXTO PUEDE
+        TRAER MEZCLADA UNA MARCA DE CONTEXTO ANTERIOR (ej.
+        "halion" DEL PRODUCTO YA MOSTRADO) JUNTO CON LA MARCA
+        NUEVA QUE EL CLIENTE ACABA DE ESCRIBIR (ej. "teros"),
+        PODIA QUEDARSE CON LA MARCA VIEJA E IGNORAR LA NUEVA.
+
+        AHORA: SI HAY VARIAS MARCAS PRESENTES EN EL TEXTO,
+        SE ELIGE LA QUE APARECE MAS AL FINAL (LA MAS RECIENTE
+        MENCIONADA POR EL CLIENTE).
+        */
+        int mejorPosicionMarca = -1;
+
         for (String marca : catalogo.getMarcas()) {
 
-            if (contienePalabra(texto, marca)) {
+            int posicion = posicionUltimaCoincidencia(texto, marca);
 
+            if (posicion > mejorPosicionMarca) {
+
+                mejorPosicionMarca = posicion;
                 busqueda.setMarca(marca);
-                break;
 
             }
 
