@@ -1146,7 +1146,20 @@ private String aplicarPersonalidad(String mensaje) {
                         String marca =
                                 p.getMarca().toLowerCase();
 
-                        if (texto.contains(marca)) {
+                        /*
+                        SE USA \b (LIMITE DE PALABRA) EN VEZ DE
+                        contains() PLANO, PARA EVITAR FALSOS POSITIVOS
+                        COMO LA MARCA "LG" APARECIENDO DENTRO DE
+                        LA PALABRA "PULGADAS".
+                        */
+                        boolean coincide =
+                                !marca.isBlank() &&
+                                java.util.regex.Pattern
+                                        .compile("\\b" + java.util.regex.Pattern.quote(marca) + "\\b")
+                                        .matcher(texto)
+                                        .find();
+
+                        if (coincide) {
 
                                 ultimaMarca = marca;
 
