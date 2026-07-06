@@ -533,10 +533,18 @@ private String aplicarPersonalidad(String mensaje) {
 
         /*
         GUARDAR MEDIDAS
+
+        ANTES: EL REGEX "(\\d{2})" CAPTURABA CUALQUIER NUMERO
+        DE DOS DIGITOS EN EL TEXTO (ej. "144hz", UN MODELO,
+        ETC.), NO NECESARIAMENTE UNA MEDIDA EN PULGADAS.
+
+        AHORA: SOLO SE GUARDA COMO MEDIDA SI EL NUMERO VIENE
+        ACOMPAÑADO DE "pulgada(s)", COMILLA SIMPLE (') O DOBLE (")
+        QUE ES COMO SE EXPRESA REALMENTE UNA MEDIDA DE PANTALLA.
         */
         java.util.regex.Matcher matcher =
                 java.util.regex.Pattern
-                .compile("(\\d{2})")
+                .compile("(\\d{2})\\s*(pulgadas?|\"|')")
                 .matcher(texto);
 
         if (matcher.find()) {
@@ -577,7 +585,15 @@ private String aplicarPersonalidad(String mensaje) {
                 !texto.matches(".*\\d{2}.*") &&
                 !ultimaMedida.isBlank()
         ) {
-        texto += " " + ultimaMedida;
+        /*
+        SE AGREGA LA PALABRA "pulgadas" AL REINYECTAR LA MEDIDA
+        RECORDADA, PORQUE EL DETECTOR DE MEDIDA DE ProductoDAO
+        EXIGE QUE EL NUMERO VENGA ACOMPAÑADO DE "pulgada(s)" O
+        UNA COMILLA PARA RECONOCERLO. SIN ESTO, EL NUMERO SOLO
+        (ej. "27") SE PERDIA SILENCIOSAMENTE Y LA BUSQUEDA
+        IGNORABA POR COMPLETO EL TAMAÑO PEDIDO.
+        */
+        texto += " " + ultimaMedida + " pulgadas";
         }
 
         String intencion = detectarIntencion(texto);

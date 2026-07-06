@@ -681,9 +681,16 @@ public class ProductoDAO {
         // ----------------------------
         // Detectar medida
         // ----------------------------
+        /*
+        SE INCLUYE LA COMILLA DOBLE (") ADEMAS DE LA SIMPLE (')
+        PORQUE LOS NOMBRES DE LOS PRODUCTOS USAN LA COMILLA DOBLE
+        COMO SIMBOLO DE PULGADAS (ej. `27" HS2703FC`). SIN ESTO,
+        CUANDO EL CONTEXTO ANTERIOR TRAIA EL NOMBRE DEL PRODUCTO,
+        LA MEDIDA NO SE RECONOCIA Y LA BUSQUEDA IGNORABA EL TAMAÑO.
+        */
         java.util.regex.Matcher matcher =
                 java.util.regex.Pattern
-                        .compile("(\\d{2})\\s*(pulgada|pulgadas|')")
+                        .compile("(\\d{2})\\s*(pulgadas?|\"|')")
                         .matcher(texto);
 
         if (matcher.find()) {
