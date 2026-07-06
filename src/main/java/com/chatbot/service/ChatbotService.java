@@ -1188,14 +1188,22 @@ private String aplicarPersonalidad(String mensaje) {
 
                 /*
                 SI EL CLIENTE MENCIONA EXPLICITAMENTE UNA MARCA
-                DISTINTA A LA ULTIMA RECORDADA (ej. veniamos hablando
-                de "halion" y ahora pide "msi"), SIGNIFICA QUE QUIERE
-                UN PRODUCTO DISTINTO. EN ESE CASO NO SE DEBE ARRASTRAR
-                EL ultimoContexto DEL PRODUCTO ANTERIOR, PORQUE ESTE
+                DISTINTA A LA DEL ULTIMO PRODUCTO QUE REALMENTE
+                SE LE MOSTRO (ej. se le mostro un "halion" y ahora
+                pide "msi"), SIGNIFICA QUE QUIERE UN PRODUCTO
+                DISTINTO. EN ESE CASO NO SE DEBE ARRASTRAR EL
+                ultimoContexto DEL PRODUCTO ANTERIOR, PORQUE ESTE
                 INCLUYE EL NOMBRE/MODELO EXACTO DE ESE PRODUCTO (ej.
                 "HS2703FC") Y ESO HACIA QUE LA BUSQUEDA SIGUIERA
                 FILTRANDO POR ESE MODELO VIEJO AUNQUE LA MARCA HAYA
                 CAMBIADO, DEVOLVIENDO SIEMPRE "NO ENCONTRO PRODUCTO".
+
+                IMPORTANTE: SE COMPARA CONTRA LA MARCA DEL PRODUCTO
+                REALMENTE MOSTRADO (ultimoProductoEncontrado), NO
+                CONTRA EL CAMPO ultimaMarca. ESE CAMPO SOLO SE
+                ACTUALIZA CUANDO EL CLIENTE ESCRIBE LA MARCA, PERO
+                EL PRIMER MONITOR MOSTRADO PUDO SER, POR EJEMPLO,
+                "HALION" SIN QUE EL CLIENTE LO HAYA PEDIDO ASI.
                 */
                 int mejorPosicionMarcaNueva = -1;
                 String marcaMencionada = null;
@@ -1210,10 +1218,18 @@ private String aplicarPersonalidad(String mensaje) {
                         }
                 }
 
+                String marcaProductoAnterior =
+                        (
+                                ultimoProductoEncontrado != null &&
+                                ultimoProductoEncontrado.getMarca() != null
+                        )
+                        ? ultimoProductoEncontrado.getMarca().toLowerCase()
+                        : "";
+
                 if (
                         marcaMencionada != null &&
-                        !ultimaMarca.isBlank() &&
-                        !marcaMencionada.equals(ultimaMarca)
+                        !marcaProductoAnterior.isBlank() &&
+                        !marcaMencionada.equals(marcaProductoAnterior)
                 ) {
 
                 ultimoContexto = "";
@@ -1347,6 +1363,14 @@ private String aplicarPersonalidad(String mensaje) {
                         producto.getNombre() + " " +
                         producto.getCategoria() + " " +
                         producto.getMarca();
+
+                if (producto.getMarca() != null) {
+                        ultimaMarca = producto.getMarca().toLowerCase();
+                }
+
+                if (producto.getCategoria() != null) {
+                        ultimaCategoria = producto.getCategoria().toLowerCase();
+                }
 
                 chat.setNombreProducto(
                         producto.getNombre()
