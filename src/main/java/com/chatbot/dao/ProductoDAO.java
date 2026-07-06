@@ -475,6 +475,17 @@ public class ProductoDAO {
     }
 
     public Producto buscarCoincidencia(String mensaje) {
+        return buscarCoincidencia(mensaje, null);
+    }
+
+    /*
+    SOBRECARGA QUE PERMITE EXCLUIR UNA MARCA DE LOS
+    RESULTADOS. SE USA CUANDO EL CLIENTE PIDE "OTRA MARCA":
+    SIN ESTO, SI NO SE MENCIONA UNA MARCA NUEVA EXPLICITA,
+    LA BUSQUEDA POR CATEGORIA/MEDIDA PODIA SEGUIR ELIGIENDO
+    EL MISMO PRODUCTO (MISMA MARCA) QUE YA SE HABIA MOSTRADO.
+    */
+    public Producto buscarCoincidencia(String mensaje, String marcaExcluida) {
 
         String texto = normalizar(mensaje);
 
@@ -483,6 +494,14 @@ public class ProductoDAO {
         }
 
         Busqueda busqueda = analizarMensaje(mensaje);
+
+        if (
+                marcaExcluida != null &&
+                !marcaExcluida.isBlank() &&
+                !marcaExcluida.equalsIgnoreCase(busqueda.getMarca())
+        ) {
+            busqueda.setMarcaExcluida(marcaExcluida);
+        }
 
         System.out.println("=== DIAGNOSTICO BUSQUEDA ===");
         System.out.println("Mensaje: " + mensaje);
@@ -514,6 +533,28 @@ public class ProductoDAO {
 
         productos = filtrarMarca(productos, busqueda);
         System.out.println("Despues de marca: " + productos.size());
+
+        if (
+                busqueda.getMarcaExcluida() != null &&
+                !busqueda.getMarcaExcluida().isBlank()
+        ) {
+
+            List<Producto> sinMarcaExcluida = new ArrayList<>();
+
+            for (Producto p : productos) {
+
+                if (
+                        p.getMarca() == null ||
+                        !p.getMarca().equalsIgnoreCase(busqueda.getMarcaExcluida())
+                ) {
+                    sinMarcaExcluida.add(p);
+                }
+            }
+
+            productos = sinMarcaExcluida;
+
+            System.out.println("Despues de excluir marca '" + busqueda.getMarcaExcluida() + "': " + productos.size());
+        }
 
         productos = filtrarModelo(productos, busqueda);
         System.out.println("Despues de modelo: " + productos.size());

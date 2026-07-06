@@ -23,6 +23,15 @@ public class ChatbotService {
         private String ultimaMedida = "";
         private String ultimoContexto = "";
         /*
+        MARCA QUE HAY QUE EXCLUIR DE LA PROXIMA BUSQUEDA
+        PORQUE EL CLIENTE PIDIO EXPLICITAMENTE "OTRA MARCA".
+        SIN ESTO, AL NO HABER NINGUNA MARCA NUEVA ESCRITA EN
+        EL MENSAJE, EL CODIGO REINYECTABA LA MISMA ultimaMarca
+        DE SIEMPRE Y LA BUSQUEDA TERMINABA DEVOLVIENDO OTRA VEZ
+        EL MISMO PRODUCTO QUE YA SE LE HABIA MOSTRADO.
+        */
+        private String marcaExcluida = "";
+        /*
         GUARDA EL PRODUCTO REALMENTE USADO
         PARA GENERAR LA ULTIMA RESPUESTA DE TEXTO,
         ASI procesarMensajeApi() NO VUELVE A BUSCAR
@@ -519,6 +528,24 @@ private String aplicarPersonalidad(String mensaje) {
         ARRASTRADA POR CONTEXTO Y LA NUEVA QUE EL CLIENTE ACABA
         DE ESCRIBIR), SE PREFIERE LA QUE APARECE MAS AL FINAL.
         */
+        /*
+        SI EL CLIENTE PIDE "OTRA MARCA" Y NO ESCRIBE NINGUNA
+        MARCA NUEVA EXPLICITA EN ESTE MISMO MENSAJE, SE GUARDA
+        LA MARCA ACTUAL COMO "marcaExcluida" Y SE LIMPIA
+        ultimaMarca PARA QUE NO SE VUELVA A USAR MAS ABAJO.
+        SI EL CLIENTE SI NOMBRA UNA MARCA NUEVA (ej. "otra
+        marca, teros"), ESA MARCA NUEVA GANA IGUAL MAS ABAJO
+        Y marcaExcluida QUEDA VACIA.
+        */
+        boolean pideOtraMarca = quiereOtraMarca(texto);
+
+        if (pideOtraMarca && !ultimaMarca.isBlank()) {
+                marcaExcluida = ultimaMarca;
+                ultimaMarca = "";
+        } else if (!pideOtraMarca) {
+                marcaExcluida = "";
+        }
+
         int posMarca = -1;
 
         for (String marca : marcasDelCatalogo()) {
@@ -528,6 +555,13 @@ private String aplicarPersonalidad(String mensaje) {
                 if (pos > posMarca) {
                         posMarca = pos;
                         ultimaMarca = marca;
+                        /*
+                        EL CLIENTE SI ESCRIBIO UNA MARCA NUEVA
+                        CONCRETA, ASI QUE YA NO HAY QUE EXCLUIR
+                        NADA: LA BUSQUEDA DEBE IR DIRECTO A ESA
+                        MARCA.
+                        */
+                        marcaExcluida = "";
                 }
         }
 
@@ -580,6 +614,13 @@ private String aplicarPersonalidad(String mensaje) {
         ) {
         texto += " " + ultimaMarca;
         }
+
+        /*
+        SI EL CLIENTE PIDIO "OTRA MARCA" SE VUELVE A AGREGAR
+        LA CATEGORIA (YA HECHO ARRIBA) PERO NO LA MARCA. EN SU
+        LUGAR, LA BUSQUEDA RECIBE marcaExcluida PARA DESCARTAR
+        LOS PRODUCTOS DE ESA MARCA Y OFRECER UNA DISTINTA.
+        */
 
         if (
                 !texto.matches(".*\\d{2}.*") &&
@@ -637,7 +678,7 @@ private String aplicarPersonalidad(String mensaje) {
         } else {
 
         producto =
-                productoDAO.buscarCoincidencia(texto);
+                productoDAO.buscarCoincidencia(texto, marcaExcluida);
         }
 
         /*
@@ -1080,6 +1121,28 @@ private String aplicarPersonalidad(String mensaje) {
         return "NORMAL";
         }
 
+        /*
+        DETECTA CUANDO EL CLIENTE PIDE UN PRODUCTO DE UNA
+        MARCA DISTINTA A LA QUE YA SE LE MOSTRO (ej. "en otra
+        marca", "otro fabricante"), SIN NECESARIAMENTE NOMBRAR
+        LA MARCA NUEVA. EN ESE CASO HAY QUE EXCLUIR LA MARCA
+        ANTERIOR EN VEZ DE REINYECTARLA COMO CONTEXTO.
+        */
+        private boolean quiereOtraMarca(String texto) {
+
+        texto = texto.toLowerCase();
+
+        return
+                texto.contains("otra marca") ||
+                texto.contains("otro fabricante") ||
+                texto.contains("diferente marca") ||
+                texto.contains("marca distinta") ||
+                texto.contains("marca diferente") ||
+                texto.contains("cambia de marca") ||
+                texto.contains("cambiar de marca") ||
+                texto.contains("otras marcas");
+        }
+
         private boolean quiereAlternativa(String texto) {
 
         texto = texto.toLowerCase();
@@ -1242,13 +1305,34 @@ private String aplicarPersonalidad(String mensaje) {
                         ? ultimoProductoEncontrado.getMarca().toLowerCase()
                         : "";
 
+                /*
+                EL CLIENTE TAMBIEN PUEDE PEDIR "OTRA MARCA" SIN
+                NOMBRAR NINGUNA MARCA NUEVA. EN ESE CASO TAMBIEN
+                HAY QUE DESCARTAR EL ultimoContexto, PORQUE ESTE
+                TRAE EL NOMBRE DEL PRODUCTO ANTERIOR (Y POR LO
+                TANTO SU MARCA) Y VOLVERIA A REINYECTARSE MAS
+                ABAJO, HACIENDO QUE LA BUSQUEDA SIGA ENCONTRANDO
+                LA MISMA MARCA QUE EL CLIENTE QUIERE EVITAR.
+                */
+                boolean pideOtraMarca = quiereOtraMarca(texto);
+
                 if (
-                        marcaMencionada != null &&
-                        !marcaProductoAnterior.isBlank() &&
-                        !marcaMencionada.equals(marcaProductoAnterior)
+                        (
+                                marcaMencionada != null &&
+                                !marcaProductoAnterior.isBlank() &&
+                                !marcaMencionada.equals(marcaProductoAnterior)
+                        )
+                        ||
+                        pideOtraMarca
                 ) {
 
                 ultimoContexto = "";
+                }
+
+                if (pideOtraMarca && !marcaProductoAnterior.isBlank()) {
+                marcaExcluida = marcaProductoAnterior;
+                } else if (!pideOtraMarca) {
+                marcaExcluida = "";
                 }
 
                 /*
@@ -1317,6 +1401,17 @@ private String aplicarPersonalidad(String mensaje) {
                 AHORA: SE ELIGE LA MARCA QUE APARECE MAS AL FINAL
                 DEL TEXTO (LA MENCIONADA MAS RECIENTEMENTE).
                 */
+                if (pideOtraMarca) {
+                /*
+                MIENTRAS NO APAREZCA UNA MARCA NUEVA EXPLICITA
+                EN EL TEXTO, ultimaMarca SE QUEDA VACIA PARA QUE
+                NO SE REINYECTE MAS ABAJO. SI EL BUCLE DE ABAJO
+                ENCUENTRA UNA MARCA NUEVA ESCRITA POR EL CLIENTE,
+                ESA SI SE USA (Y marcaExcluida DEJA DE APLICAR).
+                */
+                ultimaMarca = "";
+                }
+
                 int mejorPosicionMarcaApi = -1;
 
                 for (Producto p : productoDAO.listarActivos()) {
@@ -1338,6 +1433,22 @@ private String aplicarPersonalidad(String mensaje) {
 
                                 mejorPosicionMarcaApi = posicion;
                                 ultimaMarca = marca;
+
+                                if (
+                                        marcaExcluida.equalsIgnoreCase(marca)
+                                ) {
+                                /*
+                                LA UNICA MARCA QUE APARECE EN EL
+                                TEXTO ES JUSTO LA QUE SE QUIERE
+                                EXCLUIR (ARRASTRADA DE OTRO LADO,
+                                NO ESCRITA A PROPOSITO POR EL
+                                CLIENTE EN ESTE MENSAJE), ASI QUE
+                                NO CUENTA COMO "MARCA NUEVA".
+                                */
+                                ultimaMarca = "";
+                                } else {
+                                marcaExcluida = "";
+                                }
                         }
                 }
 

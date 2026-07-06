@@ -6,6 +6,7 @@ public class Busqueda {
 
     private String categoria;
     private String marca;
+    private String marcaExcluida;
     private String modelo;
     private String medida;
     private List<String> atributos = new ArrayList<>();
@@ -27,6 +28,21 @@ public class Busqueda {
 
     public void setMarca(String marca) {
         this.marca = marca;
+    }
+
+    public String getMarcaExcluida() {
+        return marcaExcluida;
+    }
+
+    /*
+    MARCA QUE NO DEBE APARECER EN EL RESULTADO.
+    SE USA CUANDO EL CLIENTE PIDE "EN OTRA MARCA",
+    PARA DESCARTAR PRODUCTOS DE LA MARCA QUE YA SE
+    LE MOSTRO, EN LUGAR DE VOLVER A DEVOLVER EL MISMO
+    PRODUCTO.
+    */
+    public void setMarcaExcluida(String marcaExcluida) {
+        this.marcaExcluida = marcaExcluida;
     }
 
     public String getModelo() {
