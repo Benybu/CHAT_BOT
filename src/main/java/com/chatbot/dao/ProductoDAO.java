@@ -295,11 +295,27 @@ public class ProductoDAO {
     CLIENTE, TOLERANDO SINGULAR/PLURAL (ej: "monitor" debe
     encontrar "monitores").
     */
-    private boolean coincideConCategoria(String texto, String categoria) {
+    /*
+    ANTES: DEVOLVIA SOLO true/false, Y LA CATEGORIA GANADORA
+    ERA LA PRIMERA QUE APARECIERA AL RECORRER catalogo.getCategorias(),
+    QUE ES UN HashSet SIN ORDEN GARANTIZADO. SI EL TEXTO TRAIA
+    MEZCLADAS DOS CATEGORIAS (ej. "mouse" DE CONTEXTO VIEJO Y
+    "monitor" DEL MENSAJE NUEVO DEL CLIENTE), PODIA GANAR LA
+    VIEJA POR PURA CASUALIDAD DE ORDEN INTERNO, IGNORANDO LO
+    QUE EL CLIENTE ACABABA DE ESCRIBIR.
+
+    AHORA: DEVUELVE LA POSICION DE LA MENCION MAS RECIENTE
+    (IGUAL QUE YA SE HACE CON MARCA/ATRIBUTOS), O -1 SI NO
+    COINCIDE. QUIEN LLAMA A ESTO SE QUEDA CON LA CATEGORIA
+    CUYA POSICION SEA LA MAS ALTA (LA MENCIONADA MAS AL FINAL).
+    */
+    private int posicionCategoria(String texto, String categoria) {
 
         String[] stopwords = {"de", "del", "la", "el", "los", "las", "para", "pc", "y"};
 
         boolean tieneAlMenosUnaPalabraSignificativa = false;
+
+        int posicionMasReciente = -1;
 
         for (String palabra : categoria.split("\\s+")) {
 
@@ -322,37 +338,37 @@ public class ProductoDAO {
 
             tieneAlMenosUnaPalabraSignificativa = true;
 
-            boolean encontrada =
-                    contienePalabra(texto, palabra);
+            int posicion =
+                    posicionUltimaCoincidencia(texto, palabra);
 
-            if (!encontrada) {
+            if (posicion == -1) {
 
                 String singular = quitarPlural(palabra);
 
                 if (!singular.equals(palabra)) {
-                    encontrada = contienePalabra(texto, singular);
+                    posicion = posicionUltimaCoincidencia(texto, singular);
                 }
             }
 
             /*
-            ANTES: BASTABA CON QUE UNA SOLA PALABRA DE UNA
-            CATEGORIA COMPUESTA (ej. "silla gamer") APARECIERA
-            EN EL TEXTO PARA QUE TODA LA CATEGORIA SE DIERA
-            POR VALIDA. ESO HACIA QUE, POR EJEMPLO, LA PALABRA
-            "gamer" (presente en casi cualquier mensaje sobre
-            monitores gamer) HICIERA MATCH CON LA CATEGORIA
-            "silla gamer" AUNQUE EL CLIENTE NUNCA MENCIONO "silla".
-
-            AHORA: TODAS LAS PALABRAS SIGNIFICATIVAS DE LA
-            CATEGORIA DEBEN ESTAR PRESENTES (AND EN VEZ DE OR).
+            TODAS LAS PALABRAS SIGNIFICATIVAS DE LA CATEGORIA
+            DEBEN ESTAR PRESENTES (AND, NO OR).
             */
-            if (!encontrada) {
-                return false;
+            if (posicion == -1) {
+                return -1;
+            }
+
+            if (posicion > posicionMasReciente) {
+                posicionMasReciente = posicion;
             }
 
         }
 
-        return tieneAlMenosUnaPalabraSignificativa;
+        if (!tieneAlMenosUnaPalabraSignificativa) {
+            return -1;
+        }
+
+        return posicionMasReciente;
 
     }
 
@@ -852,12 +868,16 @@ public class ProductoDAO {
         // ----------------------------
         // Detectar categoría
         // ----------------------------
+        int mejorPosicionCategoria = -1;
+
         for (String categoria : catalogo.getCategorias()) {
 
-            if (coincideConCategoria(texto, categoria)) {
+            int posicion = posicionCategoria(texto, categoria);
 
+            if (posicion > mejorPosicionCategoria) {
+
+                mejorPosicionCategoria = posicion;
                 busqueda.setCategoria(categoria);
-                break;
 
             }
 
