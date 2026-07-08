@@ -730,9 +730,26 @@ private String aplicarPersonalidad(String mensaje) {
 
         if (conv != null) {
 
+                /*
+                SE OBTIENE LA MARCA DEL PRODUCTO ANTERIOR PARA
+                PRIORIZAR ALGO DE LA MISMA MARCA (ej. EL MISMO
+                MOUSE LOGITECH EN OTRO COLOR) EN VEZ DE SALTAR A
+                UN PRODUCTO CUALQUIERA DE LA CATEGORIA.
+                */
+                Producto productoAnterior =
+                        productoDAO.buscarPorId(
+                                conv.getUltimoProductoId()
+                        );
+
+                String marcaAnterior =
+                        (productoAnterior != null)
+                        ? productoAnterior.getMarca()
+                        : null;
+
                 Producto alternativo =
                         productoDAO.buscarAlternativa(
                                 conv.getUltimaCategoria(),
+                                marcaAnterior,
                                 conv.getPreferenciaPrecio(),
                                 conv.getUltimoProductoId()
                         );
@@ -1233,6 +1250,11 @@ private String aplicarPersonalidad(String mensaje) {
                 texto.contains("otro que") ||
                 texto.contains("uno diferente") ||
                 texto.contains("otro diferente") ||
+                texto.contains("otro color") ||
+                texto.contains("otra color") ||
+                texto.contains("otros colores") ||
+                texto.contains("diferente color") ||
+                texto.contains("otro tono") ||
                 texto.contains("recomiendame otro") ||
                 texto.contains("recomiéndame otro");
         }

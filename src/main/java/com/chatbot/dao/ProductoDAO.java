@@ -1676,11 +1676,30 @@ public class ProductoDAO {
         String preferencia,
         int productoActualId
     ) {
+        return buscarAlternativa(categoria, null, preferencia, productoActualId);
+    }
+
+    /*
+    SOBRECARGA QUE PRIORIZA MANTENER LA MISMA MARCA DEL
+    PRODUCTO ACTUAL. SE USA CUANDO EL CLIENTE PIDE "OTRO
+    COLOR" O "OTRO MODELO": SIN ESTO, buscarAlternativa PODIA
+    DEVOLVER CUALQUIER PRODUCTO DE LA MISMA CATEGORIA (ej. UN
+    MOUSE DE OTRA MARCA), EN VEZ DE LA OTRA VARIANTE DEL MISMO
+    PRODUCTO (ej. EL MISMO MOUSE LOGITECH EN OTRO COLOR).
+    */
+    public Producto buscarAlternativa(
+        String categoria,
+        String marcaPreferida,
+        String preferencia,
+        int productoActualId
+    ) {
 
         List<Producto> productos =
                 listarActivos();
 
         Producto mejor = null;
+
+        Producto mejorMismaMarca = null;
 
         for (Producto p : productos) {
 
@@ -1718,6 +1737,16 @@ public class ProductoDAO {
                     return p;
                 }
 
+                if (
+                        mejorMismaMarca == null &&
+                        marcaPreferida != null &&
+                        !marcaPreferida.isBlank() &&
+                        p.getMarca() != null &&
+                        p.getMarca().equalsIgnoreCase(marcaPreferida)
+                ) {
+                    mejorMismaMarca = p;
+                }
+
                 /*
                 PRODUCTO NORMAL
                 */
@@ -1725,6 +1754,10 @@ public class ProductoDAO {
                     mejor = p;
                 }
             }
+        }
+
+        if (mejorMismaMarca != null) {
+            return mejorMismaMarca;
         }
 
         return mejor;
