@@ -970,6 +970,34 @@ private String aplicarPersonalidad(String mensaje) {
             }
 
             /*
+             AVISO HONESTO DE MEDIDA
+             SI EL CLIENTE PIDIO UN TAMAÑO ESPECIFICO (ej. "24
+             PULGADAS") Y EL PRODUCTO ENCONTRADO TIENE OTRA
+             MEDIDA (ej. SOLO HAY 27" EN ESA MARCA), SE ACLARA
+             EN VEZ DE MOSTRARLO CALLADAMENTE COMO SI FUERA LO
+             QUE PIDIO. MISMO CRITERIO QUE EL AVISO DE COLOR.
+            */
+            String medidaSolicitada =
+                    productoDAO.detectarMedidaEnTexto(texto);
+
+            if (
+                    medidaSolicitada != null &&
+                    !productoDAO.productoContieneMedida(
+                            producto,
+                            medidaSolicitada
+                    )
+            ) {
+
+                respuesta += """
+
+
+                📏 Por cierto, no tenemos ese modelo en %s\
+                 pulgadas, el tamaño disponible es el que ves arriba.
+                """.formatted(medidaSolicitada);
+
+            }
+
+            /*
              GUARDA MENSAJE
             */
             mensajeDAO.guardar(
@@ -1199,6 +1227,12 @@ private String aplicarPersonalidad(String mensaje) {
                 texto.contains("algo más") ||
                 texto.contains("alternativa") ||
                 texto.contains("otro producto") ||
+                texto.contains("otro modelo") ||
+                texto.contains("otra version") ||
+                texto.contains("otra versión") ||
+                texto.contains("otro que") ||
+                texto.contains("uno diferente") ||
+                texto.contains("otro diferente") ||
                 texto.contains("recomiendame otro") ||
                 texto.contains("recomiéndame otro");
         }

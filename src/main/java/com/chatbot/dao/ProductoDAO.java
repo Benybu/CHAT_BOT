@@ -773,6 +773,43 @@ public class ProductoDAO {
 
     }
 
+    /*
+    EXPUESTO PARA QUE ChatbotService PUEDA AVISAR AL CLIENTE
+    CUANDO LA MEDIDA QUE PIDIO (ej. "24 PULGADAS") NO ES LA
+    DEL PRODUCTO QUE SE LE VA A MOSTRAR (ej. PIDIO 24" Y SOLO
+    HAY DISPONIBLE 27" EN ESA MARCA), EN VEZ DE MOSTRARLO
+    CALLADAMENTE COMO SI FUERA UNA COINCIDENCIA EXACTA.
+    MISMO PATRON YA USADO CON detectarColorEnTexto/nombreContieneColor.
+    */
+    public String detectarMedidaEnTexto(String mensaje) {
+
+        String texto = normalizar(mensaje);
+
+        java.util.regex.Matcher matcher =
+                java.util.regex.Pattern
+                        .compile("(\\d{2})\\s*(pulgadas?|\"|')")
+                        .matcher(texto);
+
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+
+        return null;
+
+    }
+
+    public boolean productoContieneMedida(Producto producto, String medida) {
+
+        if (producto == null ||
+            producto.getMedida() == null ||
+            medida == null) {
+            return false;
+        }
+
+        return normalizar(producto.getMedida()).contains(medida);
+
+    }
+
     private Busqueda analizarMensaje(String mensaje) {
 
         Busqueda busqueda = new Busqueda();
