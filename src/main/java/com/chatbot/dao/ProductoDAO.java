@@ -1173,6 +1173,18 @@ public class ProductoDAO {
 
         }
 
+        /*
+        IGUAL QUE CON EL COLOR: SI LA MEDIDA VIENE DE
+        CONTEXTO VIEJO (ej. "27 PULGADAS" ARRASTRADO DE UNA
+        PREGUNTA ANTERIOR SOBRE MONITORES) Y LA CATEGORIA
+        ACTUAL NI SIQUIERA USA MEDIDA (ej. MOUSE), NO TIENE
+        SENTIDO DESCARTAR TODO. SE MANTIENE LA LISTA ORIGINAL
+        EN VEZ DE DEVOLVER CERO RESULTADOS.
+        */
+        if (resultado.isEmpty()) {
+            return productos;
+        }
+
         return resultado;
 
     }
@@ -1215,6 +1227,16 @@ public class ProductoDAO {
 
             }
 
+        }
+
+        /*
+        MISMO CRITERIO QUE MEDIDA Y COLOR: SI LOS ATRIBUTOS
+        VIENEN DE CONTEXTO VIEJO (ej. "144HZ" DE UNA PREGUNTA
+        ANTERIOR SOBRE MONITORES) Y LA CATEGORIA ACTUAL NO
+        TIENE ESOS ATRIBUTOS (ej. MOUSE), NO SE DESCARTA TODO.
+        */
+        if (resultado.isEmpty()) {
+            return productos;
         }
 
         return resultado;
