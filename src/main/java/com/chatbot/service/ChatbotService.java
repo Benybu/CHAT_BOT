@@ -999,6 +999,7 @@ private String aplicarPersonalidad(String mensaje) {
 
             if (
                     medidaSolicitada != null &&
+                    producto.getMedida() != null &&
                     !productoDAO.productoContieneMedida(
                             producto,
                             medidaSolicitada

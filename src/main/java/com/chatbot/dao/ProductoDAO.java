@@ -154,11 +154,22 @@ public class ProductoDAO {
     QUE SOLO SUMA PUNTOS SIN FILTRAR NADA.
     */
     private static final String[] COLORES = {
-        "negro", "blanco", "gris", "plomo",
-        "rojo", "azul", "celeste", "verde",
-        "amarillo", "naranja", "morado", "violeta",
-        "rosado", "rosa", "marron", "café", "cafe",
-        "dorado", "plateado", "beige"
+        "negro", "negra",
+        "blanco", "blanca",
+        "gris", "plomo",
+        "rojo", "roja",
+        "azul", "celeste",
+        "verde",
+        "amarillo", "amarilla",
+        "naranja",
+        "morado", "morada",
+        "violeta",
+        "rosado", "rosada", "rosa",
+        "marron", "marrón",
+        "café", "cafe",
+        "dorado", "dorada",
+        "plateado", "plateada",
+        "beige"
     };
 
     /*
@@ -197,13 +208,51 @@ public class ProductoDAO {
         return detectarColor(normalizar(mensaje));
     }
 
+    /*
+    DEVUELVE LAS VARIANTES DE GENERO DE UN COLOR
+    (ej. "negro" -> ["negro","negra"]) PARA QUE AL COMPARAR
+    CONTRA EL NOMBRE DEL PRODUCTO NO IMPORTE SI EL CLIENTE
+    ESCRIBIO "silla negra" (CORRECTO GRAMATICALMENTE) Y EL
+    PRODUCTO EN LA BASE DE DATOS DICE "COLOR NEGRO" (SIN
+    CONCORDANCIA DE GENERO, MUY COMUN EN NOMBRES DE PRODUCTOS).
+    */
+    private String[] variantesDeColor(String color) {
+
+        return switch (color) {
+            case "negro", "negra" -> new String[]{"negro", "negra"};
+            case "blanco", "blanca" -> new String[]{"blanco", "blanca"};
+            case "rojo", "roja" -> new String[]{"rojo", "roja"};
+            case "morado", "morada" -> new String[]{"morado", "morada"};
+            case "rosado", "rosada" -> new String[]{"rosado", "rosada"};
+            case "dorado", "dorada" -> new String[]{"dorado", "dorada"};
+            case "plateado", "plateada" -> new String[]{"plateado", "plateada"};
+            case "amarillo", "amarilla" -> new String[]{"amarillo", "amarilla"};
+            case "marron", "marrón" -> new String[]{"marron", "marrón"};
+            case "cafe", "café" -> new String[]{"cafe", "café"};
+            default -> new String[]{color};
+        };
+
+    }
+
     public boolean nombreContieneColor(String nombre, String color) {
 
         if (nombre == null || color == null) {
             return false;
         }
 
-        return contienePalabra(normalizar(nombre), normalizar(color));
+        String nombreNormalizado = normalizar(nombre);
+
+        String colorNormalizado = normalizar(color);
+
+        for (String variante : variantesDeColor(colorNormalizado)) {
+
+            if (contienePalabra(nombreNormalizado, variante)) {
+                return true;
+            }
+
+        }
+
+        return false;
 
     }
 
