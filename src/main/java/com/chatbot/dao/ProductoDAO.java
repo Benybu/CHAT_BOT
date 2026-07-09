@@ -422,6 +422,9 @@ public class ProductoDAO {
                 estado,
                 categoria,
                 marca,
+                modelo,
+                medida,
+                atributos,
                 tags,
                 imagen
                 FROM productos
@@ -646,7 +649,20 @@ public class ProductoDAO {
         System.out.println("Atributos detectados: " + busqueda.getAtributos());
         System.out.println("============================");
 
-        String[] palabrasUsuario = texto.split("\\s+");
+        /*
+        ANTES: SE DIVIDIA SOLO POR ESPACIOS (\\s+), ASI QUE
+        PALABRAS COMO "teclado??" O "xtreme??" (MUY COMUNES
+        PORQUE EL CONTEXTO ACUMULADO SIEMPRE TRAE SIGNOS DE
+        PUNTUACION PEGADOS) NUNCA COINCIDIAN CONTRA EL INDICE
+        DE BUSQUEDA (QUE GUARDA LAS PALABRAS LIMPIAS, SIN "??").
+        ESO HACIA QUE filtrarPorIndice DESCARTARA PRODUCTOS
+        VALIDOS QUE YA HABIAN PASADO TODOS LOS DEMAS FILTROS.
+
+        AHORA: SE DIVIDE IGUAL QUE EN EL RESTO DEL CODIGO
+        (ej. IndiceBusquedaBuilder), POR CUALQUIER CARACTER
+        QUE NO SEA LETRA O NUMERO.
+        */
+        String[] palabrasUsuario = texto.split("[^a-z0-9]+");
 
         String[] ignorar = {
             "tienen","tienes","tenga","hay",
@@ -1797,6 +1813,9 @@ public class ProductoDAO {
             estado,
             categoria,
             marca,
+            modelo,
+            medida,
+            atributos,
             tags,
             imagen
             FROM productos
