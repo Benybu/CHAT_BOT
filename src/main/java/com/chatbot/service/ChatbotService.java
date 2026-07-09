@@ -1015,6 +1015,34 @@ private String aplicarPersonalidad(String mensaje) {
             }
 
             /*
+             AVISO HONESTO DE MARCA
+             MISMO CRITERIO QUE COLOR Y MEDIDA: SI EL CLIENTE
+             PIDIO UNA MARCA ESPECIFICA Y EL PRODUCTO ENCONTRADO
+             ES DE OTRA MARCA (ej. PIDIO "LG" Y SOLO HAY DE OTRAS
+             MARCAS EN ESA CATEGORIA), SE ACLARA EN VEZ DE
+             MOSTRARLO CALLADAMENTE COMO SI FUERA LO QUE PIDIO.
+            */
+            String marcaSolicitada =
+                    productoDAO.detectarMarcaEnTexto(texto);
+
+            if (
+                    marcaSolicitada != null &&
+                    !productoDAO.productoContieneMarca(
+                            producto,
+                            marcaSolicitada
+                    )
+            ) {
+
+                respuesta += """
+
+
+                🏷️ Por cierto, no tenemos esa marca disponible,\
+                 pero esta es la opción más parecida que tenemos.
+                """;
+
+            }
+
+            /*
              GUARDA MENSAJE
             */
             mensajeDAO.guardar(

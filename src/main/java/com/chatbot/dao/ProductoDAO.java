@@ -813,6 +813,51 @@ public class ProductoDAO {
     CALLADAMENTE COMO SI FUERA UNA COINCIDENCIA EXACTA.
     MISMO PATRON YA USADO CON detectarColorEnTexto/nombreContieneColor.
     */
+    /*
+    EXPUESTO PARA QUE ChatbotService PUEDA AVISAR AL CLIENTE
+    CUANDO LA MARCA QUE PIDIO (ej. "LG") NO ES LA DEL PRODUCTO
+    QUE SE LE VA A MOSTRAR, EN VEZ DE CAMBIARLA CALLADAMENTE.
+    MISMO PATRON YA USADO CON COLOR Y MEDIDA.
+    */
+    public String detectarMarcaEnTexto(String mensaje) {
+
+        String texto = normalizar(mensaje);
+
+        construirCatalogo();
+
+        String marcaDetectada = null;
+
+        int mejorPosicion = -1;
+
+        for (String marca : catalogo.getMarcas()) {
+
+            int posicion = posicionUltimaCoincidencia(texto, marca);
+
+            if (posicion > mejorPosicion) {
+
+                mejorPosicion = posicion;
+                marcaDetectada = marca;
+
+            }
+
+        }
+
+        return marcaDetectada;
+
+    }
+
+    public boolean productoContieneMarca(Producto producto, String marca) {
+
+        if (producto == null ||
+            producto.getMarca() == null ||
+            marca == null) {
+            return false;
+        }
+
+        return normalizar(producto.getMarca()).contains(marca);
+
+    }
+
     public String detectarMedidaEnTexto(String mensaje) {
 
         String texto = normalizar(mensaje);
@@ -1216,6 +1261,20 @@ public class ProductoDAO {
 
         }
 
+        /*
+        MISMO CRITERIO QUE MEDIDA/ATRIBUTOS/COLOR/MODELO:
+        SI LA MARCA DETECTADA VIENE DE CONTEXTO VIEJO (ej. EL
+        CLIENTE YA CAMBIO DE "MONITOR LG" A "SILLA GAMER" PERO
+        "lg" SIGUE ARRASTRANDOSE), NO SE DESCARTA TODO EL
+        CANDIDATO SOLO POR ESO. SE AVISA POR SEPARADO EN
+        ChatbotService CUANDO LA MARCA PEDIDA NO COINCIDE CON
+        LA QUE REALMENTE SE MUESTRA (VER detectarMarcaEnTexto /
+        productoContieneMarca).
+        */
+        if (resultado.isEmpty()) {
+            return productos;
+        }
+
         return resultado;
 
     }
@@ -1375,6 +1434,17 @@ public class ProductoDAO {
 
             }
 
+        }
+
+        /*
+        MISMO CRITERIO QUE MEDIDA/ATRIBUTOS/COLOR: SI EL
+        "MODELO" DETECTADO VIENE DE CONTEXTO VIEJO, O SI EL
+        CAMPO modelo EN LA BASE DE DATOS ESTA VACIO/INCONSISTENTE
+        PARA ESE PRODUCTO (PROBLEMA FRECUENTE DE DATOS, NO DE
+        BUSQUEDA), NO SE DESCARTA TODO EL CANDIDATO POR ESO.
+        */
+        if (resultado.isEmpty()) {
+            return productos;
         }
 
         return resultado;
