@@ -135,13 +135,43 @@ public class ChatbotService {
         VEZ DE UNA LISTA FIJA E INCOMPLETA.
 
         SE EXCLUYE CUALQUIER PRODUCTO CUYO CAMPO "marca" SEA
-        IGUAL A SU PROPIO "categoria" (ej. SILLAS CARGADAS CON
-        marca="Silla", categoria="Silla"). ESO ES UN DATO MAL
-        CARGADO, NO UNA MARCA REAL, Y SI SE INCLUYERA, CUALQUIER
-        MENSAJE QUE MENCIONE ESA CATEGORIA SE INTERPRETARIA
-        TAMBIEN COMO SI PIDIERA ESA "MARCA", ARRASTRANDOLA DE
-        TURNO EN TURNO IGUAL QUE UNA MARCA REAL.
+        EN REALIDAD UNA PALABRA DE SU PROPIA "categoria" (ej.
+        SILLAS CARGADAS CON marca="Silla", categoria="Silla
+        Gamer"). ESO ES UN DATO MAL CARGADO, NO UNA MARCA REAL,
+        Y SI SE INCLUYERA, CUALQUIER MENSAJE QUE MENCIONE ESA
+        CATEGORIA SE INTERPRETARIA TAMBIEN COMO SI PIDIERA ESA
+        "MARCA", ARRASTRANDOLA DE TURNO EN TURNO IGUAL QUE UNA
+        MARCA REAL.
+
+        ANTES SE COMPARABA CON IGUALDAD EXACTA (equalsIgnoreCase),
+        LO CUAL NO DETECTABA ESTE CASO PORQUE LA CATEGORIA REAL
+        ES "silla gamer" (DOS PALABRAS) Y LA MARCA MAL CARGADA
+        ES SOLO "silla" (UNA PALABRA): NO SON IGUALES, ASI QUE
+        SE COLABA COMO SI FUERA UNA MARCA VALIDA. AHORA SE
+        VERIFICA SI LA CATEGORIA *CONTIENE* LA MARCA COMO PALABRA.
         */
+        private boolean marcaEsPalabraDeCategoria(
+                String marca,
+                String categoria
+        ) {
+
+        if (marca == null || categoria == null) {
+                return false;
+        }
+
+        String marcaNorm = marca.trim().toLowerCase();
+        String categoriaNorm = categoria.trim().toLowerCase();
+
+        if (marcaNorm.isBlank()) {
+                return false;
+        }
+
+        return java.util.regex.Pattern
+                .compile("\\b" + java.util.regex.Pattern.quote(marcaNorm) + "\\b")
+                .matcher(categoriaNorm)
+                .find();
+        }
+
         private java.util.Set<String> marcasDelCatalogo() {
 
         java.util.Set<String> marcas = new java.util.HashSet<>();
@@ -154,9 +184,9 @@ public class ChatbotService {
                 ) {
 
                 boolean marcaEsIgualASuCategoria =
-                        p.getCategoria() != null &&
-                        p.getMarca().trim().equalsIgnoreCase(
-                                p.getCategoria().trim()
+                        marcaEsPalabraDeCategoria(
+                                p.getMarca(),
+                                p.getCategoria()
                         );
 
                 if (!marcaEsIgualASuCategoria) {
@@ -1452,6 +1482,29 @@ private String aplicarPersonalidad(String mensaje) {
                 */
                 boolean pideOtraMarca = quiereOtraMarca(texto);
 
+                /*
+                LO MISMO PASA SI EL CLIENTE PIDE UN COLOR DISTINTO
+                AL DEL ULTIMO PRODUCTO MOSTRADO (ej. se le mostro
+                una silla "morada" y ahora pide "verde"). EL
+                ultimoContexto TRAE EL NOMBRE COMPLETO DEL PRODUCTO
+                ANTERIOR, QUE INCLUYE SU MODELO EXACTO (ej.
+                "RIK-101M"). SI NO SE LIMPIA, EL DETECTOR DE MODELO
+                DE ProductoDAO SIGUE ENCONTRANDO ESE MISMO MODELO
+                EN EL TEXTO Y LA BUSQUEDA QUEDA ATRAPADA EN EL
+                MISMO PRODUCTO DE SIEMPRE, IGNORANDO EL COLOR NUEVO
+                QUE EL CLIENTE PIDIO.
+                */
+                String colorMencionado =
+                        productoDAO.detectarColorEnTexto(texto);
+
+                boolean cambioDeColor =
+                        colorMencionado != null &&
+                        ultimoProductoEncontrado != null &&
+                        !productoDAO.nombreContieneColor(
+                                ultimoProductoEncontrado.getNombre(),
+                                colorMencionado
+                        );
+
                 if (
                         (
                                 marcaMencionada != null &&
@@ -1460,6 +1513,8 @@ private String aplicarPersonalidad(String mensaje) {
                         )
                         ||
                         pideOtraMarca
+                        ||
+                        cambioDeColor
                 ) {
 
                 ultimoContexto = "";
@@ -1565,17 +1620,21 @@ private String aplicarPersonalidad(String mensaje) {
 
                         /*
                         IGNORAR PRODUCTOS CUYA "marca" ES EN
-                        REALIDAD UN DATO MAL CARGADO IGUAL A SU
-                        PROPIA CATEGORIA (ej. SILLAS CON
-                        marca="Silla", categoria="Silla"). SI NO,
+                        REALIDAD UN DATO MAL CARGADO QUE COINCIDE
+                        CON UNA PALABRA DE SU PROPIA CATEGORIA (ej.
+                        SILLAS CON marca="Silla", categoria="Silla
+                        Gamer" -> "silla" ES PALABRA DE "silla
+                        gamer" AUNQUE NO SEAN IGUALES). SI NO,
                         CUALQUIER MENSAJE QUE MENCIONE ESA
                         CATEGORIA SE INTERPRETA TAMBIEN COMO SI
-                        PIDIERA ESA "MARCA".
+                        PIDIERA ESA "MARCA". SE USA EL MISMO
+                        HELPER QUE marcasDelCatalogo() PARA SER
+                        CONSISTENTES.
                         */
                         if (
-                                p.getCategoria() != null &&
-                                marca.equalsIgnoreCase(
-                                        p.getCategoria().trim().toLowerCase()
+                                marcaEsPalabraDeCategoria(
+                                        marca,
+                                        p.getCategoria()
                                 )
                         ) {
                                 continue;
