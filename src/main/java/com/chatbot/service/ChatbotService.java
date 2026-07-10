@@ -694,6 +694,12 @@ private String aplicarPersonalidad(String mensaje) {
 
         } else {
 
+        System.out.println(
+                "DIAGNOSTICO OTRA-MARCA -> marcaExcluida='"
+                + marcaExcluida + "' ultimaMarca='"
+                + ultimaMarca + "'"
+        );
+
         producto =
                 productoDAO.buscarCoincidencia(texto, marcaExcluida);
         }
