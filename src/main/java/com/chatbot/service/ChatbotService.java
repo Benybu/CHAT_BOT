@@ -225,6 +225,105 @@ public class ChatbotService {
         return ultima;
         }
 
+        /*
+        QUITA UNA "s" O "es" FINAL DE FORMA SIMPLE, PARA PODER
+        COMPARAR SINGULAR CONTRA PLURAL (ej. "monitor" vs
+        "monitores"). NO ES UN ANALIZADOR LINGUISTICO COMPLETO,
+        SOLO CUBRE EL CASO COMUN EN ESPAÑOL.
+        */
+        private String singularizar(String palabra) {
+
+        if (palabra.length() > 4 && palabra.endsWith("es")) {
+                return palabra.substring(0, palabra.length() - 2);
+        }
+
+        if (palabra.length() > 3 && palabra.endsWith("s")) {
+                return palabra.substring(0, palabra.length() - 1);
+        }
+
+        return palabra;
+        }
+
+        /*
+        REVISA SI "categoria" (QUE PUEDE TENER VARIAS PALABRAS,
+        ej. "silla gamer") ESTA REALMENTE PRESENTE EN "texto".
+
+        ANTES: SE USABA ultimaPosicion(texto, categoria) COMPARANDO
+        LA CATEGORIA COMPLETA COMO UNA SOLA CADENA EXACTA. ESO
+        FALLABA CUANDO EL CLIENTE ESCRIBIA EN SINGULAR (ej.
+        "monitor") Y LA CATEGORIA GUARDADA EN EL CATALOGO ESTABA
+        EN PLURAL (ej. "monitores"): "monitor" != "monitores", ASI
+        QUE NUNCA SE ACTUALIZABA ultimaCategoria, Y SE SEGUIA
+        ARRASTRANDO LA CATEGORIA DE VARIOS TURNOS ATRAS (ej.
+        "silla gamer") AUNQUE EL CLIENTE YA HUBIERA PEDIDO ALGO
+        TOTALMENTE DISTINTO (UN MONITOR).
+
+        AHORA: SE EXIGE QUE TODAS LAS PALABRAS SIGNIFICATIVAS DE
+        LA CATEGORIA APAREZCAN EN EL TEXTO, TOLERANDO SINGULAR/
+        PLURAL PALABRA POR PALABRA. DEVUELVE LA POSICION MAS
+        RECIENTE ENCONTRADA (PARA PODER COMPARAR ENTRE VARIAS
+        CATEGORIAS), O -1 SI NO COINCIDE POR COMPLETO.
+        */
+        private int posicionCategoria(String texto, String categoria) {
+
+        String[] stopwords = {"de", "del", "la", "el", "los", "las", "para", "pc", "y"};
+
+        int posicionMasReciente = -1;
+        boolean tieneAlgunaPalabraSignificativa = false;
+
+        for (String palabra : categoria.trim().toLowerCase().split("\\s+")) {
+
+                if (palabra.length() <= 2) {
+                        continue;
+                }
+
+                boolean esStopword = false;
+
+                for (String sw : stopwords) {
+                        if (palabra.equals(sw)) {
+                                esStopword = true;
+                                break;
+                        }
+                }
+
+                if (esStopword) {
+                        continue;
+                }
+
+                tieneAlgunaPalabraSignificativa = true;
+
+                int pos = ultimaPosicion(texto, palabra);
+
+                if (pos < 0) {
+
+                        String singular = singularizar(palabra);
+
+                        if (!singular.equals(palabra)) {
+                                pos = ultimaPosicion(texto, singular);
+                        }
+                }
+
+                if (pos < 0) {
+                        /*
+                        FALTA ESTA PALABRA SIGNIFICATIVA: LA
+                        CATEGORIA NO COINCIDE POR COMPLETO (LOGICA
+                        AND, NO OR).
+                        */
+                        return -1;
+                }
+
+                if (pos > posicionMasReciente) {
+                        posicionMasReciente = pos;
+                }
+        }
+
+        if (!tieneAlgunaPalabraSignificativa) {
+                return -1;
+        }
+
+        return posicionMasReciente;
+        }
+
     private String saludoAleatorio() {
 
         String[] saludos = {
@@ -552,7 +651,7 @@ private String aplicarPersonalidad(String mensaje) {
 
         for (String categoria : categoriasDelCatalogo()) {
 
-                int pos = ultimaPosicion(texto, categoria);
+                int pos = posicionCategoria(texto, categoria);
 
                 if (pos > posCategoria) {
                         posCategoria = pos;
@@ -1505,6 +1604,51 @@ private String aplicarPersonalidad(String mensaje) {
                                 colorMencionado
                         );
 
+                /*
+                SI EL CLIENTE CAMBIA DE CATEGORIA POR COMPLETO (ej.
+                VENIAMOS HABLANDO DE "silla gamer" Y AHORA PIDE UN
+                "monitor"), NO SOLO HAY QUE LIMPIAR ultimoContexto:
+                TAMBIEN HAY QUE OLVIDAR LA MARCA/MEDIDA RECORDADAS,
+                PORQUE PERTENECEN A LA CATEGORIA ANTERIOR Y NO
+                TIENEN NINGUN SENTIDO PARA LA NUEVA (ej. SEGUIR
+                BUSCANDO LA MARCA DE SILLAS "xion" ENTRE MONITORES).
+                SIN ESTO, marcaExcluida/ultimaMarca SE SEGUIAN
+                REINYECTANDO MAS ABAJO Y LA BUSQUEDA TERMINABA
+                DEVOLVIENDO EL PRODUCTO VIEJO DE LA CATEGORIA
+                ANTERIOR EN VEZ DE ALGO DE LA CATEGORIA NUEVA.
+                */
+                int mejorPosicionCategoriaNueva = -1;
+                String categoriaMencionada = null;
+
+                for (String categoria : categoriasDelCatalogo()) {
+
+                        int posicion = posicionCategoria(texto, categoria);
+
+                        if (posicion > mejorPosicionCategoriaNueva) {
+                                mejorPosicionCategoriaNueva = posicion;
+                                categoriaMencionada = categoria;
+                        }
+                }
+
+                String categoriaProductoAnterior =
+                        (
+                                ultimoProductoEncontrado != null &&
+                                ultimoProductoEncontrado.getCategoria() != null
+                        )
+                        ? ultimoProductoEncontrado.getCategoria().toLowerCase()
+                        : "";
+
+                boolean cambioDeCategoria =
+                        categoriaMencionada != null &&
+                        !categoriaProductoAnterior.isBlank() &&
+                        !categoriaMencionada.equals(categoriaProductoAnterior);
+
+                if (cambioDeCategoria) {
+                        ultimaMarca = "";
+                        ultimaMedida = "";
+                        marcaExcluida = "";
+                }
+
                 if (
                         (
                                 marcaMencionada != null &&
@@ -1515,12 +1659,14 @@ private String aplicarPersonalidad(String mensaje) {
                         pideOtraMarca
                         ||
                         cambioDeColor
+                        ||
+                        cambioDeCategoria
                 ) {
 
                 ultimoContexto = "";
                 }
 
-                if (pideOtraMarca && !marcaProductoAnterior.isBlank()) {
+                if (pideOtraMarca && !marcaProductoAnterior.isBlank() && !cambioDeCategoria) {
                 marcaExcluida = marcaProductoAnterior;
                 } else if (!pideOtraMarca) {
                 marcaExcluida = "";
