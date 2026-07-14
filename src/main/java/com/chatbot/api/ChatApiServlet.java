@@ -60,6 +60,13 @@ public class ChatApiServlet extends HttpServlet {
 
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
+        /*
+        CORS: PERMITE QUE EL USERSCRIPT QUE CORRE DENTRO DE
+        facebook.com/messenger.com PUEDA LLAMAR A ESTA API
+        DESDE EL NAVEGADOR SI EN ALGUN MOMENTO SE HACE CON
+        fetch() EN VEZ DE GM_xmlhttpRequest.
+        */
+        response.setHeader("Access-Control-Allow-Origin", "*");
 
         response.getWriter().write("""
             {
@@ -69,10 +76,30 @@ public class ChatApiServlet extends HttpServlet {
                 "precio":"%s"
             }
             """.formatted( 
-                chat.getRespuesta(), 
-                chat.getNombreProducto(), 
-                chat.getImagen(), 
-                chat.getPrecio() ));
+                escapeJson(chat.getRespuesta()), 
+                escapeJson(chat.getNombreProducto()), 
+                escapeJson(chat.getImagen()), 
+                escapeJson(chat.getPrecio()) ));
 
+    }
+
+    /*
+    ESCAPA COMILLAS, BARRAS INVERTIDAS Y SALTOS DE LINEA PARA
+    QUE EL JSON DE SALIDA SIGA SIENDO VALIDO. SIN ESTO, CUALQUIER
+    RESPUESTA DEL BOT QUE TENGA UN SALTO DE LINEA (LA MAYORIA LAS
+    TIENE, ej. LA FICHA DE UBICACION) ROMPIA EL JSON Y CUALQUIER
+    CLIENTE QUE LO PARSEE (COMO EL USERSCRIPT) FALLABA.
+    */
+    private static String escapeJson(String valor) {
+
+        if (valor == null) {
+            return "";
+        }
+
+        return valor
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\r", "")
+                .replace("\n", "\\n");
     }
 }
