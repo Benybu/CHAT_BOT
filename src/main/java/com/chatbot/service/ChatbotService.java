@@ -619,6 +619,45 @@ private String aplicarPersonalidad(String mensaje) {
     }
 }
 
+        /*
+        BUSCA UNA RESPUESTA PREDEFINIDA (FAQ) POR PALABRAS CLAVE
+        Y LA DEVUELVE SIN HACER return DE INMEDIATO, PARA QUE
+        procesarMensaje() PUEDA DECIDIR SI COMBINARLA CON LA
+        RESPUESTA DE UN PRODUCTO O USARLA SOLA.
+
+        ANTES ESTA MISMA LOGICA VIVIA SOLO AL FINAL DE
+        procesarMensaje() Y HACIA return DIRECTO, PERO ESE PUNTO
+        DEL CODIGO NUNCA SE ALCANZABA SI EL MENSAJE TAMBIEN
+        COINCIDIA CON UN PRODUCTO (ej. "monitor halion 27 tiene
+        garantia?"), PORQUE LA BUSQUEDA DE PRODUCTO YA HABIA
+        HECHO return ANTES CON LA FICHA DEL PRODUCTO, IGNORANDO
+        POR COMPLETO LA PREGUNTA DE GARANTIA/ENVIO/ETC.
+        */
+        private Respuesta buscarRespuestaPredefinida(String texto) {
+
+        List<Respuesta> respuestas =
+                respuestaDAO.listarActivos();
+
+        for (Respuesta r : respuestas) {
+
+                String[] palabras =
+                        r.getPalabrasClave().split(",");
+
+                for (String palabra : palabras) {
+
+                        if (
+                                texto.contains(
+                                        palabra.trim().toLowerCase()
+                                )
+                        ) {
+                                return r;
+                        }
+                }
+        }
+
+        return null;
+        }
+
         public String procesarMensaje(String mensaje) {
 
         if (mensaje == null || mensaje.isBlank()) {
@@ -784,6 +823,34 @@ private String aplicarPersonalidad(String mensaje) {
         }
 
         String intencion = detectarIntencion(texto);
+
+        /*
+        DETECCION TEMPRANA DE PREGUNTA FRECUENTE (FAQ).
+        SE GUARDA APARTE (SIN RETORNAR TODAVIA) PARA PODER
+        COMBINARLA MAS ABAJO CON LA RESPUESTA DEL PRODUCTO SI
+        EL MENSAJE PREGUNTA LAS DOS COSAS A LA VEZ.
+        */
+        Respuesta faqDetectada = buscarRespuestaPredefinida(texto);
+
+        /*
+        SI EL MENSAJE NO MENCIONA NINGUN PRODUCTO PERO SI
+        COINCIDE CON UNA PREGUNTA FRECUENTE (ej. "hola",
+        "tienen garantia?", "hacen delivery?"), SE RESPONDE
+        CON LA FAQ DE UNA VEZ, EN VEZ DE CAER EN LA RESPUESTA
+        GENERICA DE LA IA DE ABAJO. ANTES ESTOS MENSAJES NUNCA
+        LLEGABAN A REVISAR LAS RESPUESTAS PREDEFINIDAS PORQUE
+        !mensajeBuscaProducto(texto) YA HABIA HECHO return CON
+        LA RESPUESTA DE LA IA ANTES DE ESE PUNTO DEL CODIGO.
+        */
+        if (faqDetectada != null && !mensajeBuscaProducto(texto)) {
+
+        mensajeDAO.guardar(
+                mensaje,
+                faqDetectada.getRespuesta()
+        );
+
+        return faqDetectada.getRespuesta();
+        }
 
         /*
         SI EL MENSAJE NO BUSCA PRODUCTOS,
@@ -1179,6 +1246,23 @@ private String aplicarPersonalidad(String mensaje) {
             }
 
             /*
+             SI EL MENSAJE TAMBIEN PREGUNTABA ALGO DE LAS
+             PREGUNTAS FRECUENTES (ej. GARANTIA, ENVIO, SALUDO)
+             ADEMAS DE PEDIR UN PRODUCTO, SE AGREGA ESA RESPUESTA
+             AL FINAL EN VEZ DE IGNORARLA POR HABER ENCONTRADO
+             UN PRODUCTO PRIMERO.
+            */
+            if (faqDetectada != null) {
+
+                respuesta += """
+
+
+                📌 %s
+                """.formatted(faqDetectada.getRespuesta());
+
+            }
+
+            /*
              GUARDA MENSAJE
             */
             mensajeDAO.guardar(
@@ -1191,29 +1275,18 @@ private String aplicarPersonalidad(String mensaje) {
 
         /*
          RESPUESTAS PREDEFINIDAS
+         (REUTILIZA LA DETECCION HECHA AL INICIO DE
+         procesarMensaje(), EN VEZ DE VOLVER A RECORRER
+         LA LISTA DE RESPUESTAS DESDE CERO)
         */
-        List<Respuesta> respuestas =
-                respuestaDAO.listarActivos();
+        if (faqDetectada != null) {
 
-        for (Respuesta r : respuestas) {
+            mensajeDAO.guardar(
+                    mensaje,
+                    faqDetectada.getRespuesta()
+            );
 
-            String[] palabras =
-                    r.getPalabrasClave().split(",");
-
-            for (String palabra : palabras) {
-
-                if (texto.contains(
-                        palabra.trim().toLowerCase()
-                )) {
-
-                    mensajeDAO.guardar(
-                            mensaje,
-                            r.getRespuesta()
-                    );
-
-                    return r.getRespuesta();
-                }
-            }
+            return faqDetectada.getRespuesta();
         }
 
         if (!hayRelacionConProductos(texto)) {
