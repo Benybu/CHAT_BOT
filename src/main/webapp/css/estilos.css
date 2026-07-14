@@ -333,10 +333,14 @@ button:active,
 ========================= */
 .table-responsive{
     overflow-x:auto;
+    width:100%;
+    border-radius:16px;
 }
 
 table{
     width:100%;
+    min-width:900px;
+    table-layout:fixed;
     border-collapse:collapse;
     margin-top:12px;
 }
@@ -354,6 +358,8 @@ th{
     font-size:1rem;
 
     border-bottom:1px solid rgba(255,255,255,.08);
+
+    white-space:nowrap;
 }
 
 td{
@@ -364,6 +370,16 @@ td{
     border-bottom:1px solid rgba(255,255,255,.05);
 
     transition:.2s ease;
+
+    word-wrap:break-word;
+    overflow-wrap:break-word;
+    vertical-align:middle;
+}
+
+td img{
+    display:block;
+    max-width:100%;
+    height:auto;
 }
 
 tr:hover td{

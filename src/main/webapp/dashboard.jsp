@@ -80,6 +80,7 @@
 
 <div class="panel">
     <h2>Productos disponibles</h2>
+    <div class="table-responsive">
     <table>
         <tr>
             <th>Imagen</th>
@@ -126,12 +127,6 @@
                     ? p.getTags()
                     : "-" %>
             </td>
-            <td>
-                <img
-                    src="<%= p.getImagen() %>"
-                    width="100"
-                    style="border-radius:10px;">
-            </td>
             <% if (esAdmin) { %>
             <td>
                 <form action="admin/productos" method="post" style="display:inline;">
@@ -144,10 +139,12 @@
         </tr>
         <% } %>
     </table>
+    </div>
 </div>
 
 <div class="panel">
     <h2>Respuestas automáticas</h2>
+    <div class="table-responsive">
     <table>
         <tr>
             <th>Palabras clave</th>
@@ -170,6 +167,7 @@
         </tr>
         <% } %>
     </table>
+    </div>
 </div>
 
 <% if (esAdmin) { %>
@@ -244,6 +242,7 @@
 
 <div class="panel">
     <h2>Últimos mensajes</h2>
+    <div class="table-responsive">
     <table>
         <tr>
             <th>Entrada</th>
@@ -260,6 +259,7 @@
         </tr>
         <% } %>
     </table>
+    </div>
 </div>
 <% } %>
 </body>
