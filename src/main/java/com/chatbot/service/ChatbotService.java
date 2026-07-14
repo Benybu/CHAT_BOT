@@ -47,6 +47,26 @@ public class ChatbotService {
         private final Random random = new Random();
         private final PersonalidadChatbot personalidad = PersonalidadChatbot.GAMER;
 
+        /*
+        MARCA SI LA ULTIMA RESPUESTA FUE LA FICHA FIJA DE
+        UBICACION/CONTACTO (CONSULTA GENERICA DE MARKETPLACE
+        TIPO "AUN ESTA DISPONIBLE" / "HOLA QUIERO COMPRAR").
+        procesarMensajeApi() LA USA PARA SABER SI DEBE ADJUNTAR
+        LA FOTO DE REFERENCIA DEL LOCAL.
+        */
+        private boolean ubicacionSolicitada = false;
+
+        /*
+        URL PUBLICA DE LA FOTO DE REFERENCIA DEL LOCAL (LA
+        FACHADA CON LA FLECHA). REEMPLAZAR "TU-DOMINIO" POR EL
+        DOMINIO REAL DONDE QUEDA DESPLEGADA LA APP (ej. Render)
+        UNA VEZ QUE LA IMAGEN /img/ubicacion-tienda.jpg ESTE
+        SUBIDA, O POR LA URL DE OTRO HOSTING DE IMAGENES SI SE
+        PREFIERE (ej. imgur, un bucket, etc.).
+        */
+        private static final String IMAGEN_UBICACION_TIENDA =
+                "https://TU-DOMINIO/img/ubicacion-tienda.jpg";
+
         public ChatbotService() {
 
         if (ProductoCache.obtenerProductos().isEmpty()) {
@@ -349,6 +369,91 @@ private String generarCierre() {
         };
 
         return cierres[random.nextInt(cierres.length)];
+}
+
+/*
+DETECTA CONSULTAS GENERICAS DE MARKETPLACE (FACEBOOK/OLX/ETC.)
+DONDE EL CLIENTE RESPONDE DIRECTO SOBRE LA PUBLICACION SIN
+ESCRIBIR EL NOMBRE DE NINGUN PRODUCTO DEL CATALOGO. EJEMPLOS
+TIPICOS: "aun esta disponible?", "sigue disponible", "hola
+quiero comprar", "como hago para comprarlo". SE LLAMA SIEMPRE
+JUNTO A !mensajeBuscaProducto(texto) PARA NO INTERFERIR CON
+PREGUNTAS QUE SI MENCIONAN UN PRODUCTO CONCRETO (esas ya
+tienen su propia respuesta con precio/stock real).
+*/
+private boolean esConsultaGenericaDeContacto(String texto) {
+
+        String[] frasesDisponibilidad = {
+                "esta disponible",
+                "está disponible",
+                "estara disponible",
+                "estará disponible",
+                "aun disponible",
+                "aún disponible",
+                "aun esta",
+                "aún está",
+                "todavia disponible",
+                "todavía disponible",
+                "todavia esta",
+                "todavía está",
+                "sigue disponible",
+                "sigue en venta",
+                "sigue a la venta",
+                "aun lo tienes",
+                "aún lo tienes",
+                "aun lo tiene",
+                "aún lo tiene",
+                "aun tienes",
+                "aún tienes"
+        };
+
+        for (String frase : frasesDisponibilidad) {
+                if (texto.contains(frase)) {
+                        return true;
+                }
+        }
+
+        String[] frasesCompra = {
+                "quiero comprar",
+                "quisiera comprar",
+                "me interesa comprar",
+                "quiero adquirir",
+                "como puedo comprar",
+                "cómo puedo comprar",
+                "donde puedo comprar",
+                "dónde puedo comprar",
+                "donde lo compro",
+                "dónde lo compro",
+                "como lo compro",
+                "cómo lo compro"
+        };
+
+        for (String frase : frasesCompra) {
+                if (texto.contains(frase)) {
+                        return true;
+                }
+        }
+
+        return false;
+}
+
+/*
+FICHA FIJA DE UBICACION Y CONTACTO. SE DEVUELVE TAL CUAL,
+SIN aplicarPersonalidad(), PARA QUE SIEMPRE SE VEA EXACTAMENTE
+IGUAL SIN EMOJIS NI FRASES EXTRA AGREGADAS POR LA PERSONALIDAD
+DEL BOT.
+*/
+private String respuestaUbicacionYContacto() {
+
+        return """
+        Sí, aún está disponible ✅
+
+        Visítenos: HUANCAYO 🌐📌Jr. Lima 151-Oficina 201-Segundo piso - (Entre Jr. Ancash y Amazonas, Costado de la pizzería "Donatello")
+
+        Contáctanos:
+        👉 914 678 514
+        👉 985 139 010
+        """;
 }
 
 private String generarComentarioProducto(
@@ -670,6 +775,7 @@ private String aplicarPersonalidad(String mensaje) {
         SI ESTA VEZ NO SE ENCUENTRA NADA
         */
         ultimoProductoEncontrado = null;
+        ubicacionSolicitada = false;
 
         String texto = mensaje.toLowerCase();
 
@@ -823,6 +929,36 @@ private String aplicarPersonalidad(String mensaje) {
         }
 
         String intencion = detectarIntencion(texto);
+
+        /*
+        CONSULTA GENERICA DE MARKETPLACE (ej. "aun esta
+        disponible?", "hola quiero comprar", "sigue disponible").
+        SE RESPONDE SIEMPRE CON LA MISMA FICHA DE UBICACION Y
+        CONTACTO, CON PRIORIDAD INCLUSO SOBRE LAS FAQ DE LA BASE
+        DE DATOS Y SOBRE LA RESPUESTA GENERICA DE LA IA, PORQUE
+        ESTOS MENSAJES SON LOS MAS FRECUENTES QUE MANDAN LOS
+        CLIENTES DESDE LA PUBLICACION Y NECESITAN UNA RESPUESTA
+        SIEMPRE IGUAL Y CONFIABLE. SOLO APLICA SI EL MENSAJE NO
+        MENCIONA UN PRODUCTO CONCRETO DEL CATALOGO, PARA NO
+        TAPAR LA FICHA REAL DE PRECIO/STOCK DE UN PRODUCTO
+        ESPECIFICO.
+        */
+        if (
+                esConsultaGenericaDeContacto(texto)
+                && !mensajeBuscaProducto(texto)
+        ) {
+
+                String respuesta = respuestaUbicacionYContacto();
+
+                ubicacionSolicitada = true;
+
+                mensajeDAO.guardar(
+                        mensaje,
+                        respuesta
+                );
+
+                return respuesta;
+        }
 
         /*
         DETECCION TEMPRANA DE PREGUNTA FRECUENTE (FAQ).
@@ -1972,6 +2108,18 @@ private String aplicarPersonalidad(String mensaje) {
                 chat.setPrecio(
                         producto.getPrecio().toString()
                 );
+
+                } else if (ubicacionSolicitada) {
+
+                /*
+                CONSULTA GENERICA DE DISPONIBILIDAD/COMPRA: NO HAY
+                UN PRODUCTO PUNTUAL, ASI QUE SE ADJUNTA LA FOTO DE
+                REFERENCIA DEL LOCAL EN VEZ DE LA FOTO DE UN
+                PRODUCTO.
+                */
+                chat.setImagen(IMAGEN_UBICACION_TIENDA);
+
+                ultimoContexto = texto;
 
                 } else {
 
