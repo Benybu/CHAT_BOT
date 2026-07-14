@@ -82,7 +82,15 @@
 </div>
 
 <div class="panel">
-    <h2>Productos disponibles</h2>
+    <details class="collapsible">
+        <summary>
+            <h2>Productos disponibles</h2>
+            <div class="summary-meta">
+                <span class="chip-count"><%= totalProductos %> productos</span>
+                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+        </summary>
+        <div class="collapsible-body">
     <div class="table-responsive">
     <table>
         <tr>
@@ -143,6 +151,9 @@
         <% } %>
     </table>
     </div>
+        </div>
+    </details>
+
 </div>
 
 <div class="panel">

@@ -536,6 +536,79 @@ button:active,
 }
 
 /* =========================
+   ACORDEÓN (colapsable)
+========================= */
+.collapsible summary{
+    cursor:pointer;
+    list-style:none;
+    user-select:none;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+
+    padding:6px 4px;
+    border-radius:14px;
+    transition:.2s ease;
+}
+
+.collapsible summary::-webkit-details-marker{
+    display:none;
+}
+
+.collapsible summary::marker{
+    content:"";
+}
+
+.collapsible summary:hover{
+    background:rgba(255,255,255,.04);
+}
+
+.collapsible summary h2{
+    margin-bottom:0;
+}
+
+.summary-meta{
+    display:flex;
+    align-items:center;
+    gap:14px;
+}
+
+.chip-count{
+    font-family:var(--font-mono);
+    font-size:.82rem;
+    font-weight:600;
+    color:var(--accent-1);
+
+    background:rgba(190,255,190,.1);
+    border:1px solid var(--glass-border-soft);
+
+    padding:6px 14px;
+    border-radius:999px;
+    white-space:nowrap;
+}
+
+.chevron{
+    width:20px;
+    height:20px;
+    flex-shrink:0;
+    color:var(--text-muted);
+    transition:transform .3s ease;
+}
+
+.collapsible[open] .chevron{
+    transform:rotate(180deg);
+    color:var(--accent-1);
+}
+
+.collapsible-body{
+    margin-top:22px;
+    animation:fadeUp .35s ease;
+}
+
+/* =========================
    GRID
 ========================= */
 .grid{
