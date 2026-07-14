@@ -413,6 +413,27 @@ private boolean esConsultaGenericaDeContacto(String texto) {
                 }
         }
 
+        /*
+        LAS FRASES DE ARRIBA SON COINCIDENCIA EXACTA Y SE QUEDABAN
+        CORTAS: NO CAPTURABAN VARIANTES MUY COMUNES EN FACEBOOK
+        MARKETPLACE COMO "sigue ESTANDO disponible", "aun SE
+        ENCUENTRA disponible", "todavia LO TIENES disponible",
+        ETC., DONDE HAY 1-2 PALABRAS DE MAS ENTRE EL "sigue/aun/
+        esta" Y "disponible". SIN ESTO, ESOS MENSAJES CAIAN AL
+        FLUJO NORMAL DE BUSQUEDA DE PRODUCTO Y PODIAN ARRASTRAR
+        CONTEXTO VIEJO (ej. EL ULTIMO PRODUCTO BUSCADO) EN VEZ DE
+        RESPONDER SIEMPRE CON LA FICHA FIJA DE UBICACION.
+        */
+        java.util.regex.Pattern patronDisponibilidadFlexible =
+                java.util.regex.Pattern.compile(
+                        "\\b(sigue|aun|aún|todavia|todavía|esta|está|estara|estará)\\b" +
+                        "(\\s+\\w+){0,2}\\s+disponible"
+                );
+
+        if (patronDisponibilidadFlexible.matcher(texto).find()) {
+                return true;
+        }
+
         String[] frasesCompra = {
                 "quiero comprar",
                 "quisiera comprar",
@@ -951,6 +972,18 @@ private String aplicarPersonalidad(String mensaje) {
                 String respuesta = respuestaUbicacionYContacto();
 
                 ubicacionSolicitada = true;
+
+                /*
+                LIMPIAMOS EL CONTEXTO DE PRODUCTO AL RESPONDER UNA
+                CONSULTA GENERICA. SIN ESTO, SI QUEDABA UN PRODUCTO
+                DE UNA PRUEBA (ej. POSTMAN) O DE OTRA CONVERSACION
+                GUARDADO EN ultimoContexto/ultimoProductoEncontrado,
+                PODIA COLARSE EN LA SIGUIENTE PREGUNTA DEL CLIENTE
+                AUNQUE ESTA CONSULTA GENERICA NO TENGA NADA QUE VER
+                CON ESE PRODUCTO.
+                */
+                ultimoContexto = "";
+                ultimoProductoEncontrado = null;
 
                 mensajeDAO.guardar(
                         mensaje,
