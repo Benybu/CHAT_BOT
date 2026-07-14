@@ -1,3 +1,40 @@
+/* =========================================================
+   GLASSMORPHISM DESIGN SYSTEM — Chatbot Marketplace
+   Vidrio esmerilado + orbes de luz difuminados de fondo
+========================================================= */
+
+:root{
+    /* Fondo */
+    --bg-base:#070b16;
+
+    /* Orbes de luz (atmósfera detrás del vidrio) */
+    --orb-blue:#3b82f6;
+    --orb-violet:#a855f7;
+    --orb-teal:#2dd4bf;
+    --orb-pink:#ec4899;
+
+    /* Superficie de vidrio */
+    --glass-fill: linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.03));
+    --glass-fill-strong: linear-gradient(135deg, rgba(255,255,255,.16), rgba(255,255,255,.05));
+    --glass-border: rgba(255,255,255,.18);
+    --glass-border-soft: rgba(255,255,255,.10);
+    --glass-blur: 22px;
+
+    /* Texto */
+    --text-primary:#f8fafc;
+    --text-muted:#a3b1c6;
+    --text-faint:#748099;
+
+    /* Acento */
+    --accent-1:#60a5fa;
+    --accent-2:#c084fc;
+
+    /* Tipografía */
+    --font-display:'Space Grotesk', 'Inter', sans-serif;
+    --font-body:'Inter', 'Segoe UI', sans-serif;
+    --font-mono:'JetBrains Mono', ui-monospace, monospace;
+}
+
 /* =========================
    RESET
 ========================= */
@@ -5,7 +42,7 @@
     margin:0;
     padding:0;
     box-sizing:border-box;
-    font-family: "Inter", "Segoe UI", sans-serif;
+    font-family: var(--font-body);
 }
 
 html{
@@ -13,14 +50,64 @@ html{
 }
 
 body{
+    position:relative;
     background:
-        radial-gradient(circle at top left, rgba(37,99,235,.18), transparent 30%),
-        radial-gradient(circle at bottom right, rgba(139,92,246,.16), transparent 30%),
-        #020617;
+        radial-gradient(circle at 12% 8%, rgba(59,130,246,.20), transparent 38%),
+        radial-gradient(circle at 88% 14%, rgba(168,85,247,.18), transparent 40%),
+        radial-gradient(circle at 20% 82%, rgba(45,212,191,.14), transparent 38%),
+        radial-gradient(circle at 82% 88%, rgba(236,72,153,.14), transparent 42%),
+        var(--bg-base);
 
-    color:#f8fafc;
+    color:var(--text-primary);
     min-height:100vh;
     overflow-x:hidden;
+    isolation:isolate;
+}
+
+/* Orbes flotantes difuminados: dan la profundidad "detrás del vidrio" */
+body::before,
+body::after{
+    content:"";
+    position:fixed;
+    border-radius:50%;
+    filter:blur(110px);
+    z-index:-1;
+    pointer-events:none;
+}
+
+body::before{
+    width:560px;
+    height:560px;
+    top:-180px;
+    left:-160px;
+    background:radial-gradient(circle, var(--orb-blue), transparent 70%);
+    opacity:.55;
+    animation:floatOrbA 24s ease-in-out infinite;
+}
+
+body::after{
+    width:520px;
+    height:520px;
+    bottom:-200px;
+    right:-160px;
+    background:radial-gradient(circle, var(--orb-violet), transparent 70%);
+    opacity:.5;
+    animation:floatOrbB 28s ease-in-out infinite;
+}
+
+@keyframes floatOrbA{
+    0%,100%{ transform:translate(0,0) scale(1); }
+    50%{ transform:translate(60px,50px) scale(1.12); }
+}
+
+@keyframes floatOrbB{
+    0%,100%{ transform:translate(0,0) scale(1); }
+    50%{ transform:translate(-50px,-40px) scale(1.1); }
+}
+
+@media (prefers-reduced-motion: reduce){
+    body::before,
+    body::after{ animation:none; }
 }
 
 /* =========================
@@ -31,12 +118,20 @@ body{
 }
 
 ::-webkit-scrollbar-track{
-    background:#0f172a;
+    background:transparent;
 }
 
 ::-webkit-scrollbar-thumb{
-    background:#334155;
+    background:linear-gradient(180deg, var(--orb-blue), var(--orb-violet));
     border-radius:20px;
+}
+
+/* =========================
+   TIPOGRAFÍA
+========================= */
+h1,h2,h3{
+    font-family:var(--font-display);
+    letter-spacing:-.01em;
 }
 
 /* =========================
@@ -46,6 +141,12 @@ a{
     text-decoration:none;
     color:inherit;
 }
+
+/* =========================
+   VIDRIO ESMERILADO — mixin base
+   (aplicado directamente en cada bloque para
+   máxima compatibilidad, ver .panel/.card/.topbar/.login-card)
+========================= */
 
 /* =========================
    LOGIN
@@ -59,32 +160,53 @@ a{
 }
 
 .login-card{
+    position:relative;
+    overflow:hidden;
+
     width:min(420px,95vw);
 
-    background:rgba(15,23,42,.82);
+    background:var(--glass-fill-strong);
 
-    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(150%);
+    backdrop-filter:blur(var(--glass-blur)) saturate(150%);
 
-    border:1px solid rgba(255,255,255,.08);
+    border:1px solid var(--glass-border);
 
     border-radius:28px;
 
     padding:38px;
 
     box-shadow:
-        0 10px 40px rgba(0,0,0,.45),
-        inset 0 1px 0 rgba(255,255,255,.04);
+        0 20px 50px rgba(0,0,0,.45),
+        inset 0 1px 0 rgba(255,255,255,.16),
+        inset 0 0 40px rgba(255,255,255,.02);
 
     animation:fadeUp .5s ease;
 }
 
+.login-card::before{
+    content:"";
+    position:absolute;
+    top:-60%;
+    left:-30%;
+    width:160%;
+    height:60%;
+    background:linear-gradient(115deg, rgba(255,255,255,.16), transparent 55%);
+    transform:rotate(-8deg);
+    pointer-events:none;
+}
+
 .login-card h1{
     font-size:2rem;
+    font-weight:700;
     margin-bottom:12px;
+    background:linear-gradient(to right, var(--accent-1), var(--accent-2));
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
 }
 
 .login-card p{
-    color:#94a3b8;
+    color:var(--text-muted);
     margin-bottom:25px;
 }
 
@@ -92,8 +214,10 @@ a{
    ALERTAS
 ========================= */
 .alert{
-    background:rgba(127,29,29,.35);
+    background:rgba(239,68,68,.14);
     border:1px solid rgba(239,68,68,.35);
+    -webkit-backdrop-filter:blur(10px);
+    backdrop-filter:blur(10px);
     color:#fecaca;
     padding:14px;
     border-radius:14px;
@@ -104,17 +228,22 @@ a{
    INPUTS
 ========================= */
 input,
-textarea{
+textarea,
+select{
     width:100%;
     padding:14px 16px;
 
-    background:#0f172a;
+    background:rgba(255,255,255,.05);
 
-    border:1px solid #1e293b;
+    -webkit-backdrop-filter:blur(10px);
+    backdrop-filter:blur(10px);
+
+    border:1px solid var(--glass-border-soft);
 
     border-radius:14px;
 
-    color:white;
+    color:var(--text-primary);
+    font-family:var(--font-body);
 
     outline:none;
 
@@ -124,10 +253,22 @@ textarea{
     margin-bottom:18px;
 }
 
+select option{
+    background:#0f172a;
+    color:var(--text-primary);
+}
+
+input::placeholder,
+textarea::placeholder{
+    color:var(--text-faint);
+}
+
 input:focus,
-textarea:focus{
-    border-color:#3b82f6;
-    box-shadow:0 0 0 4px rgba(59,130,246,.15);
+textarea:focus,
+select:focus{
+    border-color:rgba(96,165,250,.55);
+    background:rgba(255,255,255,.08);
+    box-shadow:0 0 0 4px rgba(59,130,246,.16);
     transform:translateY(-1px);
 }
 
@@ -141,11 +282,18 @@ textarea{
 ========================= */
 button,
 .btn{
-    border:none;
+    position:relative;
+    overflow:hidden;
 
-    background:linear-gradient(135deg,#2563eb,#3b82f6);
+    border:1px solid rgba(255,255,255,.22);
+
+    background:linear-gradient(135deg, rgba(59,130,246,.75), rgba(168,85,247,.7));
+
+    -webkit-backdrop-filter:blur(8px);
+    backdrop-filter:blur(8px);
 
     color:white;
+    font-family:var(--font-body);
 
     padding:13px 22px;
 
@@ -158,7 +306,8 @@ button,
     transition:.25s ease;
 
     box-shadow:
-        0 8px 25px rgba(37,99,235,.25);
+        0 8px 25px rgba(37,99,235,.25),
+        inset 0 1px 0 rgba(255,255,255,.25);
 
     display:inline-flex;
     align-items:center;
@@ -171,7 +320,9 @@ button:hover,
 .btn:hover{
     transform:translateY(-2px);
     box-shadow:
-        0 12px 30px rgba(37,99,235,.4);
+        0 14px 34px rgba(37,99,235,.4),
+        inset 0 1px 0 rgba(255,255,255,.3);
+    filter:brightness(1.08);
 }
 
 button:active,
@@ -196,37 +347,40 @@ button:active,
 .topbar{
     margin-top:28px;
 
-    padding:28px;
+    padding:26px 28px;
 
     display:flex;
     justify-content:space-between;
     align-items:center;
     gap:20px;
 
-    background:rgba(15,23,42,.75);
+    background:var(--glass-fill);
 
-    border:1px solid rgba(255,255,255,.07);
+    border:1px solid var(--glass-border);
 
-    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(150%);
+    backdrop-filter:blur(var(--glass-blur)) saturate(150%);
 
     border-radius:28px;
 
     box-shadow:
-        0 10px 30px rgba(0,0,0,.25);
+        0 10px 30px rgba(0,0,0,.3),
+        inset 0 1px 0 rgba(255,255,255,.12);
 }
 
 .topbar h1{
-    font-size:2.3rem;
-    font-weight:800;
-    margin-bottom:10px;
+    font-size:2.1rem;
+    font-weight:700;
+    margin-bottom:8px;
+    letter-spacing:-.02em;
 }
 
 .topbar p{
-    color:#cbd5e1;
+    color:var(--text-muted);
 }
 
 /* =========================
-   CARDS
+   CARDS (métricas)
 ========================= */
 .cards{
     margin-top:22px;
@@ -241,11 +395,12 @@ button:active,
 
     overflow:hidden;
 
-    background:rgba(15,23,42,.75);
+    background:var(--glass-fill);
 
-    border:1px solid rgba(255,255,255,.06);
+    border:1px solid var(--glass-border);
 
-    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(150%);
+    backdrop-filter:blur(var(--glass-blur)) saturate(150%);
 
     border-radius:24px;
 
@@ -254,7 +409,8 @@ button:active,
     transition:.3s ease;
 
     box-shadow:
-        0 10px 25px rgba(0,0,0,.18);
+        0 10px 25px rgba(0,0,0,.2),
+        inset 0 1px 0 rgba(255,255,255,.12);
 }
 
 .card::before{
@@ -265,57 +421,118 @@ button:active,
     top:-40px;
     right:-40px;
 
-    width:120px;
-    height:120px;
+    width:140px;
+    height:140px;
 
-    background:rgba(59,130,246,.12);
+    background:radial-gradient(circle, rgba(96,165,250,.35), transparent 70%);
+    filter:blur(6px);
 
     border-radius:50%;
 }
 
-.card:hover{
-    transform:translateY(-5px);
-    border-color:rgba(59,130,246,.35);
+.card::after{
+    content:"";
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+    height:50%;
+    background:linear-gradient(180deg, rgba(255,255,255,.10), transparent);
+    pointer-events:none;
 }
 
-.card h2{
-    font-size:1.1rem;
-    color:#cbd5e1;
-    margin-bottom:20px;
+.card:hover{
+    transform:translateY(-5px);
+    border-color:rgba(96,165,250,.4);
+    box-shadow:
+        0 18px 35px rgba(0,0,0,.28),
+        inset 0 1px 0 rgba(255,255,255,.16);
+}
+
+.card h3{
+    font-size:1.05rem;
+    font-weight:600;
+    color:var(--text-muted);
+    margin-bottom:18px;
+    position:relative;
+    z-index:1;
 }
 
 .card p{
-    font-size:3rem;
-    font-weight:800;
+    font-family:var(--font-mono);
+    font-size:2.8rem;
+    font-weight:700;
 
-    background:linear-gradient(to right,#60a5fa,#c084fc);
+    background:linear-gradient(to right, var(--accent-1), var(--accent-2));
     -webkit-background-clip:text;
     -webkit-text-fill-color:transparent;
+
+    position:relative;
+    z-index:1;
 }
 
 /* =========================
    PANELS
 ========================= */
 .panel{
+    position:relative;
+    overflow:hidden;
+
     margin-top:22px;
 
-    background:rgba(15,23,42,.75);
+    background:var(--glass-fill);
 
-    border:1px solid rgba(255,255,255,.06);
+    border:1px solid var(--glass-border);
 
-    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(150%);
+    backdrop-filter:blur(var(--glass-blur)) saturate(150%);
 
     border-radius:28px;
 
     padding:28px;
 
     box-shadow:
-        0 10px 25px rgba(0,0,0,.18);
+        0 10px 30px rgba(0,0,0,.25),
+        inset 0 1px 0 rgba(255,255,255,.1);
+}
+
+/* halo de luz sutil en la esquina superior del panel */
+.panel::before{
+    content:"";
+    position:absolute;
+    top:-120px;
+    right:-100px;
+    width:260px;
+    height:260px;
+    background:radial-gradient(circle, rgba(96,165,250,.16), transparent 70%);
+    pointer-events:none;
 }
 
 .panel h2{
-    font-size:2rem;
-    margin-bottom:24px;
+    position:relative;
+    z-index:1;
+
+    font-size:1.7rem;
+    font-weight:600;
+    margin-bottom:22px;
+
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.panel h2::before{
+    content:"";
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    box-shadow:0 0 10px rgba(96,165,250,.8);
+}
+
+.panel > *{
+    position:relative;
+    z-index:1;
 }
 
 /* =========================
@@ -351,13 +568,18 @@ thead{
 
 th{
     text-align:left;
-    padding:18px 12px;
+    padding:16px 12px;
 
-    color:#f8fafc;
+    color:var(--text-primary);
 
-    font-size:1rem;
+    font-family:var(--font-display);
+    font-size:.92rem;
+    font-weight:600;
+    letter-spacing:.02em;
+    text-transform:uppercase;
+    color:var(--text-muted);
 
-    border-bottom:1px solid rgba(255,255,255,.08);
+    border-bottom:1px solid var(--glass-border-soft);
 
     white-space:nowrap;
 }
@@ -380,10 +602,11 @@ td img{
     display:block;
     max-width:100%;
     height:auto;
+    border:1px solid var(--glass-border-soft);
 }
 
 tr:hover td{
-    background:rgba(255,255,255,.02);
+    background:rgba(255,255,255,.035);
 }
 
 /* =========================
@@ -396,11 +619,14 @@ tr:hover td{
 .chat-response{
     margin-top:18px;
 
-    background:#0f172a;
+    background:rgba(255,255,255,.05);
 
-    border:1px solid rgba(255,255,255,.06);
+    -webkit-backdrop-filter:blur(14px);
+    backdrop-filter:blur(14px);
 
-    border-left:4px solid #3b82f6;
+    border:1px solid var(--glass-border-soft);
+
+    border-left:3px solid var(--accent-1);
 
     padding:18px;
 
@@ -417,7 +643,12 @@ tr:hover td{
     align-items:center;
     gap:6px;
 
-    background:rgba(59,130,246,.12);
+    background:rgba(96,165,250,.14);
+
+    -webkit-backdrop-filter:blur(6px);
+    backdrop-filter:blur(6px);
+
+    border:1px solid rgba(96,165,250,.25);
 
     color:#93c5fd;
 
@@ -435,7 +666,7 @@ tr:hover td{
 ========================= */
 .small,
 .hint{
-    color:#94a3b8;
+    color:var(--text-muted);
     font-size:.95rem;
     line-height:1.5;
 }
@@ -470,15 +701,22 @@ tr:hover td{
     }
 
     .topbar h1{
-        font-size:1.8rem;
+        font-size:1.7rem;
     }
 
     .panel h2{
-        font-size:1.5rem;
+        font-size:1.4rem;
     }
 
     .card p{
-        font-size:2.5rem;
+        font-size:2.3rem;
+    }
+
+    body::before,
+    body::after{
+        width:320px;
+        height:320px;
+        filter:blur(80px);
     }
 }
 
